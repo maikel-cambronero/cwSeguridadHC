@@ -10,7 +10,7 @@ class supervisionController
 
         if ($oficiales != 'error') {
             return $oficiales;
-        }else{
+        } else {
             return 'error';
         }
     }
@@ -22,7 +22,19 @@ class supervisionController
 
         if ($oficiales != 'error') {
             return $oficiales;
-        }else{
+        } else {
+            return 'error';
+        }
+    }
+
+    public function get_oficiales_general()
+    {
+        $controller = new supervisionModel();
+        $oficiales = $controller->get_oficiales_general();
+
+        if ($oficiales != 'error') {
+            return $oficiales;
+        } else {
             return 'error';
         }
     }

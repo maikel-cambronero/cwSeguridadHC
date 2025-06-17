@@ -66,6 +66,30 @@ class supervisionModel
         }
     }
 
+    public function get_oficiales_general()
+    {
+        try {
+            $stmt = $this->conn->prepare("SELECT * FROM v_get_reportes_oficiales_general");
+
+            if ($stmt->execute()) {
+                $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $stmt->closeCursor();
+
+                if (!empty($result)) {
+                    return $result; // Retorna los datos del proveedor
+                } else {
+                    return 'error'; // Retorna error si no hay datos
+                }
+            } else {
+                return 'error'; // Si la consulta falla
+            }
+        } catch (PDOException $e) {
+            // Puedes agregar más detalles de error para depurar
+            return ['error' => 'Excepción: ' . $e->getMessage()];
+        }
+    }
+
 
 
 

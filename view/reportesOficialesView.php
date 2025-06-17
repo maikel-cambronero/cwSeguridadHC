@@ -40,10 +40,11 @@ if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 3)) {
     exit; // Para asegurarte que no siga cargando contenido
 }
 
-$estado = isset($_GET['estado']) ? intval($_GET['estado']) : 35; 
+$estado = isset($_GET['estado']) ? intval($_GET['estado']) : 35;
 
 $controller_super = new supervisionController();
 $reportes = $controller_super->get_reportes($estado);
+$oficiales = $controller_super->get_oficiales_general();
 
 
 function limpiarNumero($valor)
@@ -319,7 +320,7 @@ if (isset($_POST['eliminar'])) {
         <div class="row stat-cards">
             <div class="col-md-2 col-xl-3">
                 <!-- El estado 4 indica que es para agregar -->
-                <button class="nuevo_producto" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto" data-estado-agregar="4" style="border: none; background: none;">
+                <button class="nuevo_comentario" data-bs-toggle="modal" data-bs-target="#modalNuevoComentario" data-estado-agregar="4" style="border: none; background: none;">
                     <article class="stat-cards-item">
                         <div class="icono_nuevo">
                             <i data-feather="plus" style="color: white;"></i>
@@ -424,12 +425,12 @@ if (isset($_POST['eliminar'])) {
     </div>
 
     <!-- Inicio Modal Comentario Nuevo -->
-    <div class="modal fade" id="modalNuevoProducto" tabindex="-1" aria-labelledby="modalNuevoProductoLabel" aria-hidden="true">
+    <div class="modal fade" id="modalNuevoComentario" tabindex="-1" aria-labelledby="modalNuevoComentarioLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
 
                 <div class="modal-header p-2">
-                    <h6 class="modal-title" id="modalNuevoProductoLabel"><b>Agregar Nuevo Comentario</b></h6>
+                    <h6 class="modal-title" id="modalNuevoComentarioLabel"><b>Agregar Nuevo Comentario</b></h6>
                     <button type="button" class="btn-close p-1 me-2 mt-1" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
@@ -441,17 +442,29 @@ if (isset($_POST['eliminar'])) {
     </div>
     <!-- Fin Modal Producto Nuevo -->
 
-    <!-- Inicio Model Productos Desagrupados -->
-    <div class="modal fade" id="modalDetalles" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <!-- Inicio Modal Oficales  -->
+    <div class="modal fade" id="modalOficiales" tabindex="-1" aria-labelledby="modalOficialLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header p-2">
-                    <h6 class="modal-title" id="modalNuevoProductoLabel"><b>Detalles del Equipo</b></h6>
+                    <h6 class="modal-title" id="modalNuevoOficialLabel"><b>Oficiales</b></h6>
                     <button type="button" class="btn-close p-1 me-2 mt-1" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="tabla-inventarios" id="tabla-inventarios">
-                        <div class="detalles_equipo" id="detalles_equipo">
+                        <div class="oficiales_general p-2" id="oficiales_general">
+                            <table id="tabla-desagrupado" class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Cédula</th>
+                                        <th>Código</th>
+                                        <th>Puesto</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
 
                         </div>
                     </div>
@@ -558,132 +571,6 @@ if (isset($_POST['eliminar'])) {
     });
 </script>
 
-<!-- Petición Ajax para la tabla inv. Suficiente -->
-
-
-<!-- Petición Ajax para la tabla inv. Advertencia 
-<script>
-    // Configurar los botones para hacer la petición AJAX
-    document.querySelector('.inv_advertencia').addEventListener('click', function() {
-        const estado = this.getAttribute('data-estado-adv');
-        const contenedor = document.getElementById('tabla-inventarios');
-
-        //Muestra "Cargando..." mientras obtiene el contenido
-        contenedor.innerHTML = '<div class="text-center">Cargando...</div>';
-
-        fetch('ajax/tablas-invElectronicos.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'estado=' + encodeURIComponent(estado)
-            })
-            .then(res => res.text())
-            .then(data => {
-                contenedor.innerHTML = data;
-
-                const tabla = $('#tablaAdvertencia').DataTable({
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
-                        paginate: {
-                            previous: '<', // reemplaza "Anterior" por "<"
-                            next: '>' // reemplaza "Siguiente" por ">"
-                        }
-                    },
-                    dom: '<"wrapper"Bfrtip>',
-                    buttons: [{
-                            extend: 'copy',
-                            text: 'Copiar'
-                        },
-                        {
-                            extend: 'excel',
-                            text: 'Excel'
-                        },
-                        {
-                            extend: 'pdf',
-                            text: 'PDF'
-                        }
-                    ],
-                    pageLength: 10,
-                    columnDefs: [{
-                        targets: [0, -1],
-                        orderable: false,
-                        searchable: false
-                    }],
-                    drawCallback: function() {
-                        // Re-inicializa tooltips, dropdowns o eventos cuando cambia la página
-                        $('[data-bs-toggle="dropdown"]').dropdown();
-                    }
-                });
-
-                // Mover componentes a sus contenedores
-                tabla.buttons().container().appendTo('#contenedor-botones');
-                $('#tablaAdvertencia_filter').appendTo('#contenedor-busqueda');
-                $('#tablaAdvertencia_info').appendTo('#contenedor-info');
-                $('#tablaAdvertencia_paginate').appendTo('#contenedor-paginacion');
-
-            })
-            .catch(err => {
-                contenedor.innerHTML = '<div class="text-danger">Error al cargar la tabla.</div>';
-                console.error('Error AJAX:', err);
-            });
-    });
-</script>
--->
-
-<!-- Petición Ajax para la tabla inv. Crítico 
-<script>
-    // Configurar los botones para hacer la petición AJAX
-    document.querySelector('.inv_critico').addEventListener('click', function() {
-        const estado = this.getAttribute('data-estado-crt');
-        const contenedor = document.getElementById('tabla-inventarios');
-
-        //Muestra "Cargando..." mientras obtiene el contenido
-        contenedor.innerHTML = '<div class="text-center">Cargando...</div>';
-
-        fetch('ajax/tablas-invElectronicos.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'estado=' + encodeURIComponent(estado)
-            })
-            .then(res => res.text())
-            .then(data => {
-                contenedor.innerHTML = data;
-
-                const tabla = $('#tablaCritico').DataTable({
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
-                        paginate: {
-                            previous: '<', // reemplaza "Anterior" por "<"
-                            next: '>' // reemplaza "Siguiente" por ">"
-                        }
-                    },
-                    dom: '<"wrapper"Bfrtip>',
-                    buttons: [{
-                            extend: 'copy',
-                            text: 'Copiar'
-                        },
-                        {
-                            extend: 'excel',
-                            text: 'Excel'
-                        },
-                        {
-                            extend: 'pdf',
-                            text: 'PDF'
-                        }
-                    ],
-                    pageLength: 10,
-                });
-            })
-            .catch(err => {
-                contenedor.innerHTML = '<div class="text-danger">Error al cargar la tabla.</div>';
-                console.error('Error AJAX:', err);
-            });
-    });
-</script>
--->
 
 <!-- Petición Ajax Productos Desagrupados -->
 <script>
@@ -742,15 +629,15 @@ if (isset($_POST['eliminar'])) {
 
 <!-- Petición Ajax Nuevo Producto -->
 <script>
-    // Petición a Formulario Nuevo Producto.
-    document.querySelector('.nuevo_producto').addEventListener('click', function() {
+    let tabla; // Variable global
+
+    // Formulario nuevo producto (como ya lo tenés)
+    document.querySelector('.nuevo_comentario').addEventListener('click', function() {
         const estado = this.getAttribute('data-estado-agregar');
         const contenedor = document.getElementById('formulario-nuevo');
-
-        //Muestra "Cargando..." mientras obtiene el contenido
         contenedor.innerHTML = '<div class="text-center">Cargando...</div>';
 
-        fetch('ajax/formularios-invElectonicos.php', {
+        fetch('ajax/formularios-reportesOficiales.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -760,7 +647,24 @@ if (isset($_POST['eliminar'])) {
             .then(res => res.text())
             .then(data => {
                 contenedor.innerHTML = data;
-                funcionesFormulario_Agregar();
+
+                ClassicEditor.create(document.querySelector('#justi')).catch(console.error);
+                ClassicEditor.create(document.querySelector('#motivo')).catch(console.error);
+
+                if (!$.fn.DataTable.isDataTable('#tabla-desagrupado')) {
+                    tabla = $('#tabla-desagrupado').DataTable({
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+                            paginate: {
+                                previous: '<',
+                                next: '>'
+                            }
+                        },
+                        dom: '<"wrapper"Bfrtip>',
+                        buttons: ['copy', 'excel', 'pdf'],
+                        pageLength: 10,
+                    });
+                }
             })
             .catch(err => {
                 contenedor.innerHTML = '<div class="text-danger">Error al cargar el formulario.</div>';
@@ -768,44 +672,76 @@ if (isset($_POST['eliminar'])) {
             });
     });
 
-    function funcionesFormulario_Agregar() {
-        const compraInput = document.getElementById('compra');
-        const utilidadInput = document.getElementById('utilidad');
-        const ventaInput = document.getElementById('venta');
+    function abrirModalOficiales() {
+        const modalEl = document.getElementById('modalOficiales');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        llenarTablaOficiales();
 
-        function formatNumber(value) {
-            return new Intl.NumberFormat('fr-FR').format(value);
-        }
-
-        function parseNumber(value) {
-            return parseFloat(value.replace(/\s/g, '').replace(',', '.'));
-        }
-
-        function calcularPrecios() {
-            const compra = parseNumber(compraInput.value);
-            const porcentaje = parseNumber(utilidadInput.value);
-            const utilidad = 1 + (porcentaje / 100);
-            const venta = compra * utilidad;
-
-            if (!isNaN(venta)) {
-                ventaInput.value = formatNumber(venta.toFixed(2));
-            }
-        }
-
-        // Recalcular cuando se edita compra o utilidad
-        compraInput?.addEventListener('input', calcularPrecios);
-        utilidadInput?.addEventListener('input', calcularPrecios);
-
-        // Formatear todos al salir del input
-        [compraInput, utilidadInput, ventaInput].forEach(input => {
-            input?.addEventListener('blur', () => {
-                const val = parseNumber(input.value);
-                input.value = isNaN(val) ? '' : formatNumber(val.toFixed(2));
+        // Cuando el modal se cierra sin seleccionar, habilitar edición manual
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            document.querySelectorAll('input').forEach(input => {
+                if (input.id !== 'id') {
+                    input.removeAttribute('readonly');
+                }
             });
+        }, {
+            once: true
+        });
+    }
+
+    function llenarTablaOficiales() {
+        const esMovil = window.innerWidth < 768;
+        const oficialess = <?= json_encode($oficiales) ?>;
+
+        if (!tabla) {
+            console.error('La tabla no está inicializada');
+            return;
+        }
+
+        tabla.clear();
+
+        oficialess.forEach(oficial => {
+            const btn = `<button class="btn btn-sm btn-primary" onclick="seleccionarOficial('${oficial.emp_id}', '${oficial.nombre}', '${oficial.emp_cedula}', '${oficial.emp_delta}', '${oficial.emp_puesto}')">Seleccionar</button>`;
+
+            if (esMovil) {
+                const contenidoMovil = `
+                    <div class="border rounded p-2 mb-2">
+                        <div><strong>Colaborador:</strong> ${oficial.nombre}</div>
+                        <div><strong>Cédula:</strong> ${oficial.emp_cedula}</div>
+                        <div><strong>Código:</strong> ${oficial.emp_delta}</div>
+                        <div><strong>Puesto:</strong> ${oficial.emp_puesto}</div>
+                        <div class="mt-2">${btn}</div>
+                    </div>
+                `;
+                tabla.row.add([contenidoMovil, '', '', '', '']);
+            } else {
+                tabla.row.add([
+                    oficial.nombre,
+                    oficial.emp_cedula,
+                    oficial.emp_delta,
+                    oficial.emp_puesto,
+                    btn
+                ]);
+            }
         });
 
-        calcularPrecios();
+        tabla.draw();
     }
+
+    function seleccionarOficial(id, nombre, cedula, delta, puesto) {
+        // Llena los inputs
+        document.getElementById('cedula').value = cedula;
+        if (document.getElementById('nombre')) document.getElementById('nombre').value = nombre;
+        if (document.getElementById('delta')) document.getElementById('delta').value = delta;
+        if (document.getElementById('puesto')) document.getElementById('puesto').value = puesto;
+        if (document.getElementById('id')) document.getElementById('id').value = id;
+
+        // Cierra el modal
+        bootstrap.Modal.getInstance(document.getElementById('modalOficiales')).hide();
+    }
+
+    
 </script>
 
 <!-- Petición Ajax Editar Producto -->
