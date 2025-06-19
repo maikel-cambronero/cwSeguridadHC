@@ -170,35 +170,35 @@ if (isset($_GET['orden'])) {
 
     $pdf->Ln(5); // Espacio
 
-  // Calculamos el ancho total de la página menos márgenes
+    // Calculamos el ancho total de la página menos márgenes
 
 
-/// Obtener el ancho total de la página
-$pageWidth = $pdf->GetPageWidth();
+    /// Obtener el ancho total de la página
+    $pageWidth = $pdf->GetPageWidth();
 
-// Obtener el margen izquierdo actual (generalmente es el margen izquierdo)
-$leftMargin = $pdf->GetX();
+    // Obtener el margen izquierdo actual (generalmente es el margen izquierdo)
+    $leftMargin = $pdf->GetX();
 
-// Asumir que el margen derecho es igual al izquierdo
-$rightMargin = $leftMargin;
+    // Asumir que el margen derecho es igual al izquierdo
+    $rightMargin = $leftMargin;
 
-// Calcular el ancho útil (ancho de página menos márgenes)
-$usableWidth = $pageWidth - $leftMargin - $rightMargin;
+    // Calcular el ancho útil (ancho de página menos márgenes)
+    $usableWidth = $pageWidth - $leftMargin - $rightMargin;
 
-// Dividir el ancho útil en 3 columnas iguales
-$colWidth = $usableWidth / 3;
+    // Dividir el ancho útil en 3 columnas iguales
+    $colWidth = $usableWidth / 3;
 
-// Encabezados
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell($colWidth, 10, mb_convert_encoding('Cliente', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-$pdf->Cell($colWidth, 10, mb_convert_encoding('Dirección', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-$pdf->Cell($colWidth, 10, mb_convert_encoding('Teléfono', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C'); // Salto de línea
+    // Encabezados
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell($colWidth, 10, mb_convert_encoding('Cliente', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
+    $pdf->Cell($colWidth, 10, mb_convert_encoding('Dirección', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
+    $pdf->Cell($colWidth, 10, mb_convert_encoding('Teléfono', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C'); // Salto de línea
 
-// Fila de datos
-$pdf->SetFont('Arial', '', 10);
-$pdf->Cell($colWidth, 10, mb_convert_encoding($orden['cliente'], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-$pdf->Cell($colWidth, 10, mb_convert_encoding($orden['direccion'], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-$pdf->Cell($colWidth, 10, mb_convert_encoding($orden['telefono'], 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
+    // Fila de datos
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['cliente'], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
+    $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['direccion'], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
+    $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['telefono'], 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
     $pdf->Ln(5); // Espacio
 
     // Línea horizontal
@@ -207,12 +207,15 @@ $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['telefono'], 'ISO-8859-1', 
 
     $pdf->Ln(4); // Espacio
 
-    // Descripción
+    // Limpiar etiquetas HTML y entidades especiales
+    $descripcionLimpia = html_entity_decode(strip_tags($orden['descripcion']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $descripcionLimpia = str_replace("\xc2\xa0", ' ', $descripcionLimpia); // Reemplaza espacios duros
+
+    // Imprimir descripción en el PDF
     $pdf->Ln(8); // Espacio
     $pdf->SetFont('Arial', 'B', 10);
-    $pdf->Cell(0, $alturaCelda, mb_convert_encoding('Descripción del trabajoico', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
+    $pdf->Cell(0, $alturaCelda, mb_convert_encoding('Descripción del trabajo', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
     $pdf->SetFont('Arial', '', 10);
-    $descripcionLimpia = strip_tags($orden['descripcion']);
     $pdf->MultiCell(0, 7, mb_convert_encoding($descripcionLimpia, 'ISO-8859-1', 'UTF-8'), 1);
 
     // Línea horizontal
@@ -288,6 +291,6 @@ $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['telefono'], 'ISO-8859-1', 
 
     $pdf->SetXY($xRight, $pdf->GetY());
     $pdf->Cell($lineWidth, 6, mb_convert_encoding('Firma y Cédula del Encargado', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
-    
+
     $pdf->Output('I', $codOrden . " - " . mb_convert_encoding($orden['cliente'], 'ISO-8859-1', 'UTF-8') . '.pdf'); // Mostrar PDF
 }
