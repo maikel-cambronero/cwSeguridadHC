@@ -91,8 +91,8 @@ if (isset($_POST['estado'])) {
                                 <select class="form-select" name="proveedor" id="proveedor">
                                     <option value="">Seleccione una opción</option>
                                     <?php foreach ($listaProveedores as $proveedor): ?>
-                                        <option value="<?= $proveedor['ID'] ?>" data-cambio="<?= $proveedor['Tipo_Cambio'] ?>">
-                                            <?= $proveedor['Empresa'] ?>
+                                        <option value="<?= $proveedor['prov_id'] ?>">
+                                            <?= $proveedor['prov_empresa'] ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -213,8 +213,8 @@ if (isset($_POST['estado'])) {
                                 <select class="form-select" name="proveedor" id="proveedor">
                                     <option value="">Seleccione una opción</option>
                                     <?php foreach ($listaProveedores as $proveedor): ?>
-                                        <option value="<?= $proveedor['ID'] ?>" data-cambio="<?= $proveedor['Tipo_Cambio'] ?>">
-                                            <?= $proveedor['Empresa'] ?>
+                                        <option value="<?= $proveedor['prov_id'] ?>">
+                                            <?= $proveedor['prov_empresa'] ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>

@@ -1,7 +1,15 @@
 <?php
 
 include_once '../../controllers/reportSalidasControllers.php';
-require('../../fpdf/fpdf.php');
+require_once __DIR__ . '../../../dompdf/autoload.inc.php';
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
+$options = new Options();
+$options->set('isRemoteEnabled', true);
+
+$dompdf = new Dompdf($options);
 
 $controller = new ordenConroller();
 
@@ -10,6 +18,7 @@ if (isset($_GET['orden'])) {
     $ordenes = $controller->get_orden_codigo($numOrden);
 
     $equipos = [];
+    $orden = null;
     foreach ($ordenes as $index => $fila) {
         if ($index === 0) {
             $orden = [
@@ -22,99 +31,16 @@ if (isset($_GET['orden'])) {
                 'cliente' => $fila['ord_cliente'],
                 'direccion' => $fila['ord_direccion'],
                 'telefono' => $fila['ord_telefono'],
-                'descripcion' => $fila['ord_descripcion']
+                'descripcion' => $fila['ord_descripcion'],
+                'vehiculo' => $fila['veh_placa'],
+                'modelo' => $fila['veh_modelo']
             ];
         }
     }
 
-    class PDF extends FPDF
-    {
-        public $orden;
-
-        function __construct($orden)
-        {
-            parent::__construct();
-            $this->orden = $orden;
-        }
-
-        function Header()
-        {
-            $this->Image('../../assets/images/logo.png', 165, 10, 30); // mueve el logo a la derecha (X = 165)
-
-            // Datos de la empresa a la izquierda
-            $this->SetXY(10, 10);
-            $this->SetFont('Arial', 'B', 11);
-            $this->Cell(0, 5, 'FORTUNA SEGURA HC S.A', 0, 1, 'L'); // Nombre de la empresa en negrita
-
-            $this->SetFont('Arial', 'B', 10);
-            $this->Cell(0, 5, '3-101-470014', 0, 1, 'L');
-
-            $this->SetFont('Arial', '', 10);
-            $this->Cell(0, 5, mb_convert_encoding('Alajuela, La Fortuna, Sonafluca', 'ISO-8859-1', 'UTF-8'), 0, 1, 'L');
-
-            $this->Ln(25); // Espacio después del encabezado
-        }
-
-        function Footer()
-        {
-            $this->SetY(-15);
-            $this->SetFont('Arial', 'I', 8);
-            $this->Cell(0, 10, mb_convert_encoding('Página', 'ISO-8859-1', 'UTF-8') . $this->PageNo(), 0, 0, 'C');
-        }
+    if (!$orden) {
+        exit("Orden no encontrada.");
     }
-
-    // Crear PDF
-    $pdf = new PDF($orden);
-    $pdf->AddPage();
-    $pdf->SetFont('Arial', '', 12);
-
-    // Título de orden
-    $pdf->SetFont('Arial', 'BU', 16); // B = negrita, U = subrayado
-    $pdf->Cell(0, 10, mb_convert_encoding('ORDEN DE TRABAJO', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
-    $pdf->Ln(3); // Espacio después del título
-
-    $codOrden = $orden['codigo'];
-    $fecha = new DateTime($orden['fecha']);
-
-    // Fecha en español manual
-    $meses = array(
-        1 => 'enero',
-        2 => 'febrero',
-        3 => 'marzo',
-        4 => 'abril',
-        5 => 'mayo',
-        6 => 'junio',
-        7 => 'julio',
-        8 => 'agosto',
-        9 => 'septiembre',
-        10 => 'octubre',
-        11 => 'noviembre',
-        12 => 'diciembre'
-    );
-    $dia = $fecha->format('j');
-    $mes = $meses[(int)$fecha->format('n')];
-    $anio = $fecha->format('Y');
-    $fechaFinal = "$dia de $mes del $anio";
-
-    $pdf->SetFont('Arial', '', 10);
-
-    // Número de orden
-    $pdf->SetFont('Arial', 'B', 10);
-    $pdf->SetXY(130, $pdf->GetY());
-    $pdf->Cell(60, 6, mb_convert_encoding('N° Orden: ', 'ISO-8859-1', 'UTF-8') . $codOrden, 0, 1, 'R');
-
-    // Fecha
-    $pdf->SetFont('Arial', 'B', 10);
-    $pdf->SetXY(130, $pdf->GetY());
-    $pdf->Cell(60, 6, mb_convert_encoding('Fecha: ', 'ISO-8859-1', 'UTF-8') . mb_convert_encoding($fechaFinal, 'ISO-8859-1', 'UTF-8'), 0, 1, 'R');
-
-    $pdf->Ln(4); // Espacio
-
-    // Línea horizontal
-    $y = $pdf->GetY(); // Posición vertical actual
-    $pdf->Line(10, $y, 200, $y); // Línea de lado a lado
-
-    $pdf->Ln(5); // Espacio
 
     function getTipoTrabajo($tipo)
     {
@@ -130,167 +56,236 @@ if (isset($_GET['orden'])) {
         }
     }
 
-    $margenIzquierdo = 25; // Centrado para tabla de 160 mm
-    $pdf->SetX($margenIzquierdo); // Mueve la posición horizontal
-
-    $pdf->SetFont('Arial', 'B', 10);
-    $pdf->SetLineWidth(0.1);
-    $pdf->SetDrawColor(180, 180, 180); // gris claro
-    $alturaCelda = 7;
-
-    if (!empty($orden['asistente2'])) {
-        $colWidth = 40;
-
-        // Encabezados mb_convert_encoding($fechaFinal, 'ISO-8859-1', 'UTF-8')
-        $pdf->Cell($colWidth, $alturaCelda, mb_convert_encoding('Técnico', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, mb_convert_encoding('1° Asistente', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, mb_convert_encoding('2° Asistente', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, 'Tipo de Trabajo', 1, 1, 'C');
-
-        $pdf->SetX($margenIzquierdo); // Asegura alineación en la siguiente fila
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell($colWidth, $alturaCelda, $orden['tecnico'], 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, $orden['asistente1'], 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, $orden['asistente2'], 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, mb_convert_encoding(getTipoTrabajo($orden['tipo_trabajo']), 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
-    } else {
-        $colWidth = 53.33;
-
-        // Encabezados
-        $pdf->Cell($colWidth, $alturaCelda, mb_convert_encoding('Técnico', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, 'Asistente', 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, 'Tipo de Trabajo', 1, 1, 'C');
-
-        $pdf->SetX($margenIzquierdo);
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell($colWidth, $alturaCelda, $orden['tecnico'], 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, $orden['asistente1'], 1, 0, 'C');
-        $pdf->Cell($colWidth, $alturaCelda, mb_convert_encoding(getTipoTrabajo($orden['tipo_trabajo']), 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
-    }
-
-    $pdf->Ln(5); // Espacio
-
-    // Calculamos el ancho total de la página menos márgenes
-
-
-    /// Obtener el ancho total de la página
-    $pageWidth = $pdf->GetPageWidth();
-
-    // Obtener el margen izquierdo actual (generalmente es el margen izquierdo)
-    $leftMargin = $pdf->GetX();
-
-    // Asumir que el margen derecho es igual al izquierdo
-    $rightMargin = $leftMargin;
-
-    // Calcular el ancho útil (ancho de página menos márgenes)
-    $usableWidth = $pageWidth - $leftMargin - $rightMargin;
-
-    // Dividir el ancho útil en 3 columnas iguales
-    $colWidth = $usableWidth / 3;
-
-    // Encabezados
-    $pdf->SetFont('Arial', 'B', 10);
-    $pdf->Cell($colWidth, 10, mb_convert_encoding('Cliente', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-    $pdf->Cell($colWidth, 10, mb_convert_encoding('Dirección', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-    $pdf->Cell($colWidth, 10, mb_convert_encoding('Teléfono', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C'); // Salto de línea
-
-    // Fila de datos
-    $pdf->SetFont('Arial', '', 10);
-    $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['cliente'], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-    $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['direccion'], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
-    $pdf->Cell($colWidth, 10, mb_convert_encoding($orden['telefono'], 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
-    $pdf->Ln(5); // Espacio
-
-    // Línea horizontal
-    $y = $pdf->GetY(); // Posición vertical actual
-    $pdf->Line(10, $y, 200, $y); // Línea de lado a lado
-
-    $pdf->Ln(4); // Espacio
-
-    // Limpiar etiquetas HTML y entidades especiales
-    $descripcionLimpia = html_entity_decode(strip_tags($orden['descripcion']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $descripcionLimpia = str_replace("\xc2\xa0", ' ', $descripcionLimpia); // Reemplaza espacios duros
-
-    // Imprimir descripción en el PDF
-    $pdf->Ln(8); // Espacio
-    $pdf->SetFont('Arial', 'B', 10);
-    $pdf->Cell(0, $alturaCelda, mb_convert_encoding('Descripción del trabajo', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
-    $pdf->SetFont('Arial', '', 10);
-    $pdf->MultiCell(0, 7, mb_convert_encoding($descripcionLimpia, 'ISO-8859-1', 'UTF-8'), 1);
-
-    // Línea horizontal
-    $y = $pdf->GetY(); // Posición vertical actual
-    $pdf->Line(10, $y, 200, $y); // Línea de lado a lado
-
-    $pdf->Ln(5); // Espacio
-
-    // Título Recordatorios (con borde)
-    $pdf->Ln(5); // Espacio antes
-    $pdf->SetFont('Arial', 'B', 10);
-    $pdf->Cell(0, 8, mb_convert_encoding('Recordatorios', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
-
-    $pdf->SetFont('Arial', '', 10);
-    $recordatorios = [
-        '1. Informar cualquier problema imprevisto.',
-        '2. Llenar la boleta al concluir el trabajo.',
-        '3. Si se solicita trabajo adicional no cotizado, debe informarse a oficina y al cliente del costo adicional.',
-        '4. Confirmar presencia del cliente para configurar la app; si requiere segunda visita, puede tener costo adicional.',
-        '5. Si el encargado no está presente, anotar: - Ecargado no presente - enviar fotografía al cliente de las boletas.'
+    $meses = [
+        1 => 'enero',
+        2 => 'febrero',
+        3 => 'marzo',
+        4 => 'abril',
+        5 => 'mayo',
+        6 => 'junio',
+        7 => 'julio',
+        8 => 'agosto',
+        9 => 'septiembre',
+        10 => 'octubre',
+        11 => 'noviembre',
+        12 => 'diciembre'
     ];
 
-    $cellHeight = 6;
-    $cellWidth = 0;
+    $fechaObj = new DateTime($orden['fecha']);
+    $dia = $fechaObj->format('j');
+    $mes = $meses[(int)$fechaObj->format('n')];
+    $anio = $fechaObj->format('Y');
+    $fechaFinal = "$dia de $mes del $anio";
 
-    foreach ($recordatorios as $linea) {
-        $pdf->Cell($cellWidth, $cellHeight, mb_convert_encoding($linea, 'ISO-8859-1', 'UTF-8'), 1, 1, 'L');
-    }
+    date_default_timezone_set('America/Costa_Rica');
+    $logo = base64_encode(file_get_contents('../../assets/images/logo.png'));
+    $type = pathinfo('../../assets/images/logo.png', PATHINFO_EXTENSION);
+    $src = 'data:image/' . $type . ';base64,' . $logo;
 
-    /**
-     * DOS FIRMAS: Recibido y Finalización
-     */
+    $html = '
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                font-size: 14px; margin: 20px; 
+            }
 
-    $espacioMinFirma = 25; // espacio que necesita la firma (línea + texto)
-    $espacioSuperior = 15; // espacio visual arriba de la firma si hay espacio suficiente
-    $posYActual = $pdf->GetY();
-    $pageHeight = $pdf->GetPageHeight();
-    $bottomMargin = 15; // margen inferior
+            header { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                margin-bottom: 20px; 
+            }
 
-    // Calcular espacio restante en la página
-    $espacioRestante = $pageHeight - $posYActual - $bottomMargin;
+            .empresa { 
+                font-weight: bold; 
+                font-size: 16px; 
+                line-height: 1.2; 
+            }
 
-    // Si no hay espacio suficiente, ir a nueva página
-    if ($espacioRestante < ($espacioMinFirma + $espacioSuperior)) {
-        $pdf->AddPage();
-    } else {
-        // Si hay buen espacio, agregar un margen visual arriba de las firmas
-        $pdf->Ln($espacioRestante - $espacioMinFirma);
-    }
+            h1 { 
+                text-align: center; 
+                text-decoration: underline; 
+                font-weight: bold; 
+                margin-bottom: 15px; 
+                font-size: 18px; 
+            }
 
-    // Configuración
-    $lineWidth = 60;
-    $pageWidth = $pdf->GetPageWidth();
-    $yFirma = $pdf->GetY();
-    $pdf->SetDrawColor(0, 0, 0);
-    $pdf->SetLineWidth(0.1);
+            .info-orden { 
+                text-align: right; 
+                margin-bottom: 15px; 
+                font-weight: bold; 
+            }
 
-    // Posiciones X para ambas firmas
-    $margin = 20; // margen lateral
-    $xLeft = $margin;
-    $xRight = $pageWidth - $margin - $lineWidth;
+            hr { 
+                border: none; 
+                border-top: 1px solid #aaa; 
+                margin: 15px 0; 
+            }
 
-    // Dibujar líneas de firma
-    $pdf->Line($xLeft, $yFirma, $xLeft + $lineWidth, $yFirma);     // Firma izquierda
-    $pdf->Line($xRight, $yFirma, $xRight + $lineWidth, $yFirma);   // Firma derecha
+            table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-bottom: 15px; 
+            }
 
-    // Texto debajo de cada línea
-    $pdf->SetFont('Arial', '', 10);
-    $pdf->SetY($yFirma + 3);
+            th, td { 
+                border: 1px solid #aaa; 
+                padding: 6px; 
+                text-align: center; }
+                th { 
+                background-color: #eee; 
+            }
 
-    $pdf->SetXY($xLeft, $pdf->GetY());
-    $pdf->Cell($lineWidth, 6, mb_convert_encoding('Firma y Cédula del Técnico', 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
+            .descripcion { 
+                border: 1px solid #aaa; 
+                padding: 8px; 
+                margin-bottom: 14px; 
+            }
 
-    $pdf->SetXY($xRight, $pdf->GetY());
-    $pdf->Cell($lineWidth, 6, mb_convert_encoding('Firma y Cédula del Encargado', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+            .recordatorios { 
+                border: 1px solid #000; 
+                padding: 8px; 
+                font-size: 12px; 
+            }
 
-    $pdf->Output('I', $codOrden . " - " . mb_convert_encoding($orden['cliente'], 'ISO-8859-1', 'UTF-8') . '.pdf'); // Mostrar PDF
+            .firmas {
+                width: 100%;
+                margin-top: 50px;
+                font-size: 12px;
+                text-align: center;
+            }
+
+            .firma-bloque {
+                display: inline-block;
+                width: 45%;
+                vertical-align: top;
+                text-align: center;
+                margin: 0 2%;
+            }
+
+            .linea-firma {
+                border-bottom: 1px solid #000;
+                width: 100%;
+                height: 20px;
+                margin-bottom: 5px;
+            }
+
+            .firma-info {
+                font-size: 11px;
+            }
+        </style>
+    </head>
+    <body>
+
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="empresa" style="font-weight: bold; font-size: 14px; line-height: 1.4;">
+                FORTUNA SEGURA HC S.A<br/>
+                 <span style="font-weight: normal; font-size: 11px;">
+            3-101-470014<br/>
+            Alajuela, La Fortuna, Sonafluca
+        </span>
+            </div>
+            <div style="text-align: right;">
+                <img src="' . $src . '" width="100" style="width: 100px; vertical-align: middle;" />
+            </div>
+        </header>
+
+        <h1>ORDEN DE TRABAJO</h1>
+
+        <div class="info-orden">
+            N° Orden: ' . htmlspecialchars($orden['codigo']) . '<br/>
+            Fecha: ' . htmlspecialchars($fechaFinal) . '
+        </div>
+
+        <hr/>
+
+        <table>
+            <tr>
+                <th>Técnico</th>
+                <th>1° Asistente</th>';
+                if (!empty($orden['asistente2'])) {
+                $html .= '<th>2° Asistente</th>';
+                }
+                $html .= '<th>Tipo de Trabajo</th>
+            </tr>
+            <tr>
+                <td>' . htmlspecialchars($orden['tecnico']) . '</td>
+                <td>' . htmlspecialchars($orden['asistente1']) . '</td>';
+                if (!empty($orden['asistente2'])) {
+                    $html .= '<td>' . htmlspecialchars($orden['asistente2']) . '</td>';
+                }
+                $html .= '<td>' . htmlspecialchars(getTipoTrabajo($orden['tipo_trabajo'])) . '</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <th>Cliente</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+            </tr>
+            <tr>
+                <td>' . htmlspecialchars($orden['cliente']) . '</td>
+                <td>' . htmlspecialchars($orden['direccion']) . '</td>
+                <td>' . htmlspecialchars($orden['telefono']) . '</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <th>Vehículo Asignado</th>
+                <th>Hora de Emisión</th>
+            </tr>
+            <tr>
+                <td>' . 'Model: ' . htmlspecialchars($orden['modelo']) . ' - ' . 'Placa: ' . htmlspecialchars($orden['vehiculo']) . '</td>
+                <td>' . date('h:i A') . '</td>
+            </tr>
+        </table>
+
+        <div class="descripcion">
+            <strong>Descripción del trabajo:</strong><br/>
+            ' . $orden['descripcion'] . '
+        </div>
+
+        <hr/>
+
+        <div class="recordatorios">
+            <strong>Recordatorios:</strong>
+            <ol>
+                <li>Informar cualquier problema imprevisto.</li>
+                <li>Llenar la boleta al concluir el trabajo.</li>
+                <li>Si se solicita trabajo adicional no cotizado, debe informarse a oficina y al cliente del costo adicional.</li>
+                <li>Confirmar presencia del cliente para configurar la app; si requiere segunda visita, puede tener costo adicional.</li>
+                <li>Si el encargado no está presente, anotar: - Encargado no presente - enviar fotografía al cliente de las boletas.</li>
+            </ol>
+        </div>
+
+       <div class="firmas">
+            <div class="firma-bloque">
+                <strong>Firma Recibido: __________________</strong>
+                <br><br>
+                <strong>Hora: __________</strong>
+            </div>
+            <div class="firma-bloque">
+                <strong>Firma Cliente: __________________</strong>
+                <br><br>
+                <strong>Hora: __________</strong>
+            </div>
+        </div>
+
+        <footer style="text-align:center; font-size:10px; margin-top:30px;">
+            Página 1
+        </footer>
+    </body>
+    </html>
+    ';
+
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+    $dompdf->stream($orden['codigo'] . ' - ' . $orden['cliente'] . '.pdf', ['Attachment' => false]);
 }

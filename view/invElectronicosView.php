@@ -8,6 +8,34 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
+// Verificación de nivel de acceso
+if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 7 && $_SESSION['nivel_acceso'] != 3)) {
+?>
+    <style>
+        #container {
+            display: none;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        Swal.fire({
+            title: 'Acceso denegado',
+            text: 'Permisos insuficientes.',
+            icon: 'error',
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            backdrop: 'rgba(0, 0, 0, 0.9)'
+        }).then(() => {
+            window.location.href = '<?= BASE_PATH ?>/dashboard.php';
+        });
+    </script>
+    <?php
+    exit; // Para asegurarte que no siga cargando contenido
+}
+
 function limpiarNumero($valor)
 {
     // Reemplaza cualquier tipo de espacio (normal o duro) y cambia coma por punto decimal
@@ -70,7 +98,7 @@ if (isset($_POST['nuevo'])) {
 
 
         if ($addEquipo == 'success') {
-?>
+    ?>
             <script>
                 let errores = <?= json_encode(implode("\n", $errores)); ?>;
                 swal.fire({
@@ -278,21 +306,23 @@ if (isset($_POST['eliminar'])) {
 
         <h2 class="main-title text-center">Inventario Eletrónico</h2>
 
-        <div class="row stat-cards">
-            <div class="col-md-2 col-xl-3">
-                <!-- El estado 4 indica que es para agregar -->
-                <button class="nuevo_producto" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto" data-estado-agregar="4" style="border: none; background: none;">
-                    <article class="stat-cards-item">
-                        <div class="icono_nuevo">
-                            <i data-feather="plus" style="color: white;"></i>
-                        </div>
-                        <div class="stat-cards-info">
-                            <p class="stat-cards-info__num m-2">Producto Nuevo</p>
-                        </div>
-                    </article>
-                </button>
+        <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+            <div class="row stat-cards">
+                <div class="col-md-2 col-xl-3">
+                    <!-- El estado 4 indica que es para agregar -->
+                    <button class="nuevo_producto" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto" data-estado-agregar="4" style="border: none; background: none;">
+                        <article class="stat-cards-item">
+                            <div class="icono_nuevo">
+                                <i data-feather="plus" style="color: white;"></i>
+                            </div>
+                            <div class="stat-cards-info">
+                                <p class="stat-cards-info__num m-2">Producto Nuevo</p>
+                            </div>
+                        </article>
+                    </button>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
 
         <hr class="line mt-1 mb-2 pb-2">
 
@@ -306,7 +336,7 @@ if (isset($_POST['eliminar'])) {
 
         <div class="tabla-inventarios" id="tabla-inventarios">
 
-            
+
 
             <div class="row mb-3">
                 <!-- Buscador al centro -->
@@ -323,13 +353,17 @@ if (isset($_POST['eliminar'])) {
                     <tr>
                         <th>Equipo</th>
                         <th>Stock</th>
-                        <th>Límite</th>
-                        <th>Buffer</th>
-                        <th>Compra</th>
+                        <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                            <th>Límite</th>
+                            <th>Buffer</th>
+                            <th>Compra</th>
+                        <?php endif; ?>
                         <th>Venta</th>
                         <th>Categoria</th>
                         <th>Subcategoria</th>
-                        <th>Acciones</th>
+                        <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                            <th>Acciones</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -343,17 +377,21 @@ if (isset($_POST['eliminar'])) {
                                     </div>
                                 </td>
                                 <td data-label="Stock"><?= htmlspecialchars($producto['elec_stock']) ?></td>
-                                <td data-label="Límite"><?= htmlspecialchars($producto['elec_cantMin']) ?></td>
-                                <td data-label="Buffer"><?= htmlspecialchars($producto['elec_buffer']) ?></td>
-                                <td data-label="Compra">₡<?= number_format($producto['elec_precio'], 2, ',', '.') ?></td>
+                                <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                                    <td data-label="Límite"><?= htmlspecialchars($producto['elec_cantMin']) ?></td>
+                                    <td data-label="Buffer"><?= htmlspecialchars($producto['elec_buffer']) ?></td>
+                                    <td data-label="Compra">₡<?= number_format($producto['elec_precio'], 2, ',', '.') ?></td>
+                                <?php endif; ?>
                                 <td data-label="Venta">₡<?= number_format($producto['elec_precioTotal'], 2, ',', '.') ?></td>
                                 <td data-label="Categoria"><?= htmlspecialchars($producto['catg_detalle']) ?></td>
                                 <td data-label="Subcategoria"><?= htmlspecialchars($producto['scat_detalle']) ?></td>
-                                <td data-label="Acciones">
-                                    <button class="ver_detalles btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalDetalles" data-estado="24" data-codigo="<?= $producto['elec_codigo'] ?>">
-                                        <i class="fas fa-search"></i> <!-- Ícono de lupa -->
-                                    </button>
-                                </td>
+                                <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                                    <td data-label="Acciones">
+                                        <button class="ver_detalles btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalDetalles" data-estado="24" data-codigo="<?= $producto['elec_codigo'] ?>">
+                                            <i class="fas fa-search"></i> <!-- Ícono de lupa -->
+                                        </button>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>

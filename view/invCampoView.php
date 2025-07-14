@@ -8,6 +8,34 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
+// Verificación de nivel de acceso
+if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 7)) {
+?>
+    <style>
+        #container {
+            display: none;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        Swal.fire({
+            title: 'Acceso denegado',
+            text: 'Permisos insuficientes.',
+            icon: 'error',
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            backdrop: 'rgba(0, 0, 0, 0.9)'
+        }).then(() => {
+            window.location.href = '<?= BASE_PATH ?>/dashboard.php';
+        });
+    </script>
+    <?php
+    exit; // Para asegurarte que no siga cargando contenido
+}
+
 // Incluir el header
 require_once 'layout/header.php';
 require_once '../controllers/campoCotroller.php';

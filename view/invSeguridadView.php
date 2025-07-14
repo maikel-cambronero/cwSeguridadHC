@@ -8,6 +8,35 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
+// Verificación de nivel de acceso
+if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 7 && $_SESSION['nivel_acceso'] != 2)) {
+?>
+    <style>
+        #container {
+            display: none;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        Swal.fire({
+            title: 'Acceso denegado',
+            text: 'Permisos insuficientes.',
+            icon: 'error',
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            backdrop: 'rgba(0, 0, 0, 0.9)'
+        }).then(() => {
+            window.location.href = '<?= BASE_PATH ?>/dashboard.php';
+        });
+    </script>
+    <?php
+    exit; // Para asegurarte que no siga cargando contenido
+}
+
+
 // Incluir el header
 require_once 'layout/header.php';
 require_once '../controllers/seguridadCotroller.php';
@@ -272,21 +301,23 @@ if (isset($_POST['editar'])) {
 
         <h2 class="main-title text-center">Inventario Seguridad</h2>
 
-        <div class="row stat-cards">
-            <div class="col-md-2 col-xl-3">
-                <!-- El estado 4 indica que es para agregar -->
-                <button class="nuevo_equipo" data-bs-toggle="modal" data-bs-target="#modalNuevoEquipo" data-estado-agregar="4" style="border: none; background: none;">
-                    <article class="stat-cards-item">
-                        <div class="icono_nuevo">
-                            <i data-feather="plus" style="color: white;"></i>
-                        </div>
-                        <div class="stat-cards-info">
-                            <p class="stat-cards-info__num m-2">Nuevo Equipo</p>
-                        </div>
-                    </article>
-                </button>
+        <?php if ($_SESSION['nivel_acceso'] != 2): ?>
+            <div class="row stat-cards">
+                <div class="col-md-2 col-xl-3">
+                    <!-- El estado 4 indica que es para agregar -->
+                    <button class="nuevo_equipo" data-bs-toggle="modal" data-bs-target="#modalNuevoEquipo" data-estado-agregar="4" style="border: none; background: none;">
+                        <article class="stat-cards-item">
+                            <div class="icono_nuevo">
+                                <i data-feather="plus" style="color: white;"></i>
+                            </div>
+                            <div class="stat-cards-info">
+                                <p class="stat-cards-info__num m-2">Nuevo Equipo</p>
+                            </div>
+                        </article>
+                    </button>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
 
         <hr class="line mt-1 mb-2 pb-2">
 
@@ -318,7 +349,9 @@ if (isset($_POST['editar'])) {
                         <th>Condición</th>
                         <th>Categoria</th>
                         <th>Subcategoria</th>
-                        <th>Acciones</th>
+                        <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                            <th>Acciones</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -330,22 +363,24 @@ if (isset($_POST['editar'])) {
                                 <td data-label="Condición"><?= htmlspecialchars($equip['segd_condicion']) ?></td>
                                 <td data-label="Categoria"><?= $equip['catg_detalle'] ?></td>
                                 <td data-label="Subcategoria"><?= $equip['scat_detalle'] ?></td>
-                                <td data-label="Acciones">
-                                    <span class="p-relative">
-                                        <button class="dropdown-btn transparent-btn" type="button" title="More info">
-                                            <div class="sr-only">More info</div>
-                                            <i data-feather="more-horizontal" aria-hidden="true"></i>
-                                        </button>
-                                        <ul class="users-item-dropdown dropdown pt-1">
-                                            <li>
-                                                <a class="editar_equipo" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-asignado="0" data-editar-id="<?= $equip['segd_id'] ?>">Editar</a>
-                                            </li>
-                                            <li>
-                                                <a class="eliminar_producto" href="#" data-bs-toggle="modal" data-bs-target="#modalEliminar" data-estado-eliminar="6" data-id="<?= $equip['segd_id'] ?>" data-codigo="<?= $equip['segd_detalle'] ?>">Eliminar</a>
-                                            </li>
-                                        </ul>
-                                    </span>
-                                </td>
+                                <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                                    <td data-label="Acciones">
+                                        <span class="p-relative">
+                                            <button class="dropdown-btn transparent-btn" type="button" title="More info">
+                                                <div class="sr-only">More info</div>
+                                                <i data-feather="more-horizontal" aria-hidden="true"></i>
+                                            </button>
+                                            <ul class="users-item-dropdown dropdown pt-1">
+                                                <li>
+                                                    <a class="editar_equipo" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-asignado="0" data-editar-id="<?= $equip['segd_id'] ?>">Editar</a>
+                                                </li>
+                                                <li>
+                                                    <a class="eliminar_producto" href="#" data-bs-toggle="modal" data-bs-target="#modalEliminar" data-estado-eliminar="6" data-id="<?= $equip['segd_id'] ?>" data-codigo="<?= $equip['segd_detalle'] ?>">Eliminar</a>
+                                                </li>
+                                            </ul>
+                                        </span>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
