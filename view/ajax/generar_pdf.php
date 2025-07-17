@@ -277,6 +277,12 @@ if (isset($_GET['orden'])) {
             </div>
         </div>
 
+        <div style="font-size: 11px; margin-top: 30px; text-align:right;">
+            <strong>Factura Asociada:</strong> _________
+            <br>
+            <em style="font-size: 10px; color: #555;">(Para uso interno)</em>
+        </div>
+
         <footer style="text-align:center; font-size:10px; margin-top:30px;">
             Página 1
         </footer>

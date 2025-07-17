@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // Verificación de nivel de acceso
-if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 7 && $_SESSION['nivel_acceso'] != 3)) {
+if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 4 && $_SESSION['nivel_acceso'] != 5 && $_SESSION['nivel_acceso'] != 6)) {
 ?>
     <style>
         #container {
@@ -306,7 +306,7 @@ if (isset($_POST['eliminar'])) {
 
         <h2 class="main-title text-center">Inventario Eletrónico</h2>
 
-        <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+        <?php if ($_SESSION['nivel_acceso'] == 5 || $_SESSION['nivel_acceso'] == 1 || $_SESSION['nivel_acceso'] == 6): ?>
             <div class="row stat-cards">
                 <div class="col-md-2 col-xl-3">
                     <!-- El estado 4 indica que es para agregar -->
@@ -353,7 +353,7 @@ if (isset($_POST['eliminar'])) {
                     <tr>
                         <th>Equipo</th>
                         <th>Stock</th>
-                        <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                        <?php if ($_SESSION['nivel_acceso'] == 5 || $_SESSION['nivel_acceso'] == 1 || $_SESSION['nivel_acceso'] == 6): ?>
                             <th>Límite</th>
                             <th>Buffer</th>
                             <th>Compra</th>
@@ -361,7 +361,7 @@ if (isset($_POST['eliminar'])) {
                         <th>Venta</th>
                         <th>Categoria</th>
                         <th>Subcategoria</th>
-                        <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                        <?php if ($_SESSION['nivel_acceso'] == 1 || $_SESSION['nivel_acceso'] == 6): ?>
                             <th>Acciones</th>
                         <?php endif; ?>
                     </tr>
@@ -377,7 +377,7 @@ if (isset($_POST['eliminar'])) {
                                     </div>
                                 </td>
                                 <td data-label="Stock"><?= htmlspecialchars($producto['elec_stock']) ?></td>
-                                <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                                <?php if ($_SESSION['nivel_acceso'] == 5 || $_SESSION['nivel_acceso'] == 1 || $_SESSION['nivel_acceso'] == 6): ?>
                                     <td data-label="Límite"><?= htmlspecialchars($producto['elec_cantMin']) ?></td>
                                     <td data-label="Buffer"><?= htmlspecialchars($producto['elec_buffer']) ?></td>
                                     <td data-label="Compra">₡<?= number_format($producto['elec_precio'], 2, ',', '.') ?></td>
@@ -385,7 +385,7 @@ if (isset($_POST['eliminar'])) {
                                 <td data-label="Venta">₡<?= number_format($producto['elec_precioTotal'], 2, ',', '.') ?></td>
                                 <td data-label="Categoria"><?= htmlspecialchars($producto['catg_detalle']) ?></td>
                                 <td data-label="Subcategoria"><?= htmlspecialchars($producto['scat_detalle']) ?></td>
-                                <?php if ($_SESSION['nivel_acceso'] != 3): ?>
+                                <?php if ($_SESSION['nivel_acceso'] == 1 || $_SESSION['nivel_acceso'] == 6): ?>
                                     <td data-label="Acciones">
                                         <button class="ver_detalles btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalDetalles" data-estado="24" data-codigo="<?= $producto['elec_codigo'] ?>">
                                             <i class="fas fa-search"></i> <!-- Ícono de lupa -->

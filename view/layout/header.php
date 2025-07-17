@@ -140,6 +140,23 @@ if (!empty($usuario)) {
                         </li>
                         <!-- Fin del modulo de coordinación -->
 
+                        <!-- Incio del modulo de cotizaciones -->
+                        <li>
+                            <a class="show-cat-btn" href="##">
+                                <span class="icon document" aria-hidden="true"></span>Cotizaciones
+                                <span class="category__btn transparent-btn" title="Open list">
+                                    <span class="sr-only">Open list</span>
+                                    <span class="icon arrow-down" aria-hidden="true"></span>
+                                </span>
+                            </a>
+                            <ul class="cat-sub-menu">
+                                <li>
+                                    <a href="<?= BASE_PATH ?> /cotizaciones.php">Cotizaciones</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <!-- Fin del modulo de cotizaciones -->
+
                         <!-- Incio del modulo de Supervisión -->
                         <li>
                             <a class="show-cat-btn" href="##">
