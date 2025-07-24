@@ -5,13 +5,17 @@ session_start();
 
 $controller = new cotizacionesController();
 
-
 $lastID = $controller->getLastID();
 
-$consecutivo = intval($lastID) + 1;
+// Acceder al valor correcto
+if ($lastID != 'error') {
+    $cot_id = $lastID[0]['last_id'];
+}
 
-function codigoOrden($consecutivo)
+
+function codigoOrden($i)
 {
+    $consecutivo = intval($i) + 1;
     $year = date('Y');
     $codigo = "COT-FS-" . $year . "-" . str_pad($consecutivo, 4, '0', STR_PAD_LEFT);
     return $codigo;
@@ -22,7 +26,7 @@ if (isset($_POST['estado'])) {
 
     switch ($estado) {
         case '4': // Agregar
-            $codigoGenerado = codigoOrden($consecutivo);
+            $codigoGenerado = codigoOrden($cot_id);
             $hoy = date('Y-m-d');
 ?>
             <form action="" method="post">
@@ -78,30 +82,28 @@ if (isset($_POST['estado'])) {
                     <div class="row g-2">
 
                         <div class="col-md-3">
-                            <label class="form-label">Subtotal</label>
-                            <input type="text" class="form-control" id="subtotal_general" readonly>
+                            <label class="form-label" for="subtotal_general">Subtotal</label>
+                            <input type="text" class="form-control" name="subtotal_general" id="subtotal_general" readonly>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Total IVA</label>
-                            <input type="text" class="form-control" id="iva_general" readonly>
+                            <label class="form-label" for="iva_general">Total IVA</label>
+                            <input type="text" class="form-control" name="iva_general" id="iva_general" readonly>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Total Descuento</label>
-                            <input type="text" class="form-control" id="descuento_general" readonly>
+                            <label class="form-label" for="descuento_general">Total Descuento</label>
+                            <input type="text" class="form-control" name="descuento_general" id="descuento_general" readonly>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">TOTAL</label>
-                            <input type="text" class="form-control" id="total_general" readonly>
+                            <label class="form-label" for="total_general">TOTAL</label>
+                            <input type="text" class="form-control" name="total_general" id="total_general" readonly>
                         </div>
-
-
                     </div>
 
                 </div>
 
                 <div class="modal-footer py-1 px-2">
                     <button type="button" class="btn btn-secondary me-2 fs-6" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" name="nueva_orden" class="btn btn-success fs-6">Guardar Orden</button>
+                    <button type="submit" name="nueva_coti" class="btn btn-success fs-6">Cotizar</button>
                 </div>
             </form>
         <?php
@@ -112,74 +114,38 @@ if (isset($_POST['estado'])) {
             <form action="" method="post">
                 <div class="modal-body">
 
-                    <input type="hidden" id="id" name="id">
-
                     <div class="row g-2">
-                        <div class="col-12 col-sm-4 col-md-3">
-                            <label for="num_orden" class="form-label">N° Orden</label>
-                            <input type="text" class="form-control" id="num_orden" name="num_orden" readonly>
-                        </div>
-
-                        <div class="col-12 col-sm-4 col-md-3">
-                            <label for="fecha_sale" class="form-label">Fecha de Salida</label>
-                            <input type="date" class="form-control" id="fecha_sale" name="fecha_sale" require>
-                        </div>
-
-                        <div class="col-12 col-sm-4 col-md-3">
-                            <label for="vehiculo" class="form-label">Vehículo</label>
-                            <select name="vehiculo" id="vehiculo" class="form-select">
-                                <option value="">Seleccione un vehículo</option>
-                                <?php foreach ($vehiculos as $v): ?>
-                                    <option value="<?= htmlspecialchars($v['veh_id']) ?>">
-                                        <?= htmlspecialchars($v['veh_placa'] . ' ' . $v['veh_modelo']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-sm-4 col-md-3">
-                            <label for="tecnico" class="form-label">Técnico</label>
-                            <input type="text" class="form-control" id="tecnico" name="tecnico" require>
+                        <input type="hidden" name="id" id="id">
+                        <div class="col-12 col-sm-4 col-md-4">
+                            <label for="num_coti" class="form-label">N° Cotización</label>
+                            <input type="text" class="form-control" id="num_coti" name="num_coti" readonly>
                         </div>
 
                         <div class="col-12 col-sm-4 col-md-4">
-                            <label for="asistente_1" class="form-label">Asistente 1</label>
-                            <input type="text" class="form-control" id="asistente_1" name="asistente_1" require>
+                            <label for="fecha_emite" class="form-label">Fecha de Emición</label>
+                            <input type="date" class="form-control" id="fecha_emite" name="fecha_emite" required>
                         </div>
 
                         <div class="col-12 col-sm-4 col-md-4">
-                            <label for="asistente_2" class="form-label">Asistente 2</label>
-                            <input type="text" class="form-control" id="asistente_2" name="asistente_2">
+                            <label for="fecha_valida" class="form-label">Valida hasta</label>
+                            <input type="date" class="form-control" id="fecha_valida" name="fecha_valida" required>
                         </div>
 
-                        <div class="col-12 col-sm-4">
-                            <label for="tipo_trabajo" class="form-label">Tipo de Trabajo</label>
-                            <select class="form-select" name="tipo_trabajo" id="tipo_trabajo" require>
-                                <option value="">Seleccione</option>
-                                <option value="1">Instalación</option>
-                                <option value="2">Mantenimiento</option>
-                                <option value="3">Revisión</option>
-                            </select>
+                        <div class="col-12 col-sm-4 col-md-4">
+                            <label for="Vendor" class="form-label">Vendedor</label>
+                            <input type="text" class="form-control" id="Vendor" name="Vendor" require>
                         </div>
-                    </div>
 
-                    <hr class="line mt-2 mb-2 pb-2">
-
-                    <div class="row g-2">
                         <div class="col-12 col-sm-4 col-md-4">
                             <label for="cliente" class="form-label">Cliente</label>
                             <input type="text" class="form-control" id="cliente" name="cliente" require>
                         </div>
 
                         <div class="col-12 col-sm-4 col-md-4">
-                            <label for="direccion" class="form-label">Dirección</label>
-                            <input type="text" class="form-control" id="direccion" name="direccion">
-                        </div>
-
-                        <div class="col-12 col-sm-4 col-md-4">
-                            <label for="telefono" class="form-label">Télefono</label>
+                            <label for="telefono" class="form-label">Teléfono</label>
                             <input type="text" class="form-control" id="telefono" name="telefono">
                         </div>
+
                     </div>
 
                     <hr class="line mt-2 mb-2 pb-2">
@@ -194,9 +160,22 @@ if (isset($_POST['estado'])) {
                     <hr class="line mt-2 mb-2 pb-2">
 
                     <div class="row g-2">
-                        <div class="col-12 col-sm-12 col-md-12">
-                            <label for="trabajo" class="form-label">Descripción del Trabajo</label>
-                            <textarea class="form-control" id="trabajo" name="trabajo" require></textarea>
+
+                        <div class="col-md-3">
+                            <label class="form-label" for="subtotal_general">Subtotal</label>
+                            <input type="text" class="form-control" name="subtotal_general" id="subtotal_general" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="iva_general">Total IVA</label>
+                            <input type="text" class="form-control" name="iva_general" id="iva_general" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="descuento_general">Total Descuento</label>
+                            <input type="text" class="form-control" name="descuento_general" id="descuento_general" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="total_general">TOTAL</label>
+                            <input type="text" class="form-control" name="total_general" id="total_general" readonly>
                         </div>
                     </div>
 
@@ -204,7 +183,7 @@ if (isset($_POST['estado'])) {
 
                 <div class="modal-footer py-1 px-2">
                     <button type="button" class="btn btn-secondary me-2 fs-6" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" name="editar_orden" class="btn btn-success fs-6">Editar Orden</button>
+                    <button type="submit" name="nueva_coti" class="btn btn-success fs-6">Cotizar</button>
                 </div>
             </form>
         <?php
@@ -216,18 +195,8 @@ if (isset($_POST['estado'])) {
 
                 <div class="modal-body m-2 p-2">
                     <p class="mb-3">
-                        ¿Desea eliminar la orden con el código: <strong id="ordenEliminar">#CODIGO</strong>?
+                        ¿Desea eliminar la cotización con el código: <strong id="codigoEliminarTexto">#CODIGO</strong>?
                     </p>
-
-                    <div id="reintegrarContainer" class="mb-3 d-none">
-                        <label for="reintegrarSelect" class="form-label">¿Reintegrar equipos al stock?</label>
-                        <select name="reintegrar" id="reintegrarSelect" class="form-select">
-                            <option value="" selected disabled>Seleccione una opción</option>
-                            <option value="1">Sí</option>
-                            <option value="2">No</option>
-                        </select>
-                        <div id="alertaReintegrar" class="text-danger mt-2 d-none">Debe seleccionar si desea reintegrar los equipos.</div>
-                    </div>
                 </div>
 
                 <div class="modal-footer py-1 px-2">

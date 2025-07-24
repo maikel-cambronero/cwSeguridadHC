@@ -34,7 +34,7 @@ if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 2)) {
             window.location.href = '<?= BASE_PATH ?>/dashboard.php';
         });
     </script>
-    <?php
+<?php
     exit; // Para asegurarte que no siga cargando contenido
 }
 
@@ -42,7 +42,7 @@ if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 2)) {
 
 // Verificación de nivel de acceso
 if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 3)) {
-    ?>
+?>
     <style>
         #container {
             display: none;
@@ -64,11 +64,11 @@ if (($_SESSION['nivel_acceso'] != 1 && $_SESSION['nivel_acceso'] != 3)) {
             window.location.href = '<?= BASE_PATH ?>/dashboard.php';
         });
     </script>
-    <?php
+<?php
     exit; // Para asegurarte que no siga cargando contenido
 }
 
-$estado = isset($_GET['estado']) ? intval($_GET['estado']) : 35; 
+$estado = isset($_GET['estado']) ? intval($_GET['estado']) : 35;
 
 $controller = new supervisionController();
 $oficiales = $controller->get_oficiales_agrupados($estado);
@@ -101,6 +101,7 @@ $oficiales = $controller->get_oficiales_agrupados($estado);
                         <th>Código Delta</th>
                         <th>Puesto</th>
                         <th>Rol</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -109,13 +110,26 @@ $oficiales = $controller->get_oficiales_agrupados($estado);
                             <tr>
                                 <td data-label="Colaborador">
                                     <div>
-                                        <span style="color: #007bff; font-weight: bold;"><?= $oficial['emp_nombre'] . ' ' . $oficial['emp_apellidos']?></span><br>
+                                        <span style="color: #007bff; font-weight: bold;"><?= $oficial['emp_nombre'] . ' ' . $oficial['emp_apellidos'] ?></span><br>
                                         <span><?= $oficial['emp_cedula'] ?></span>
                                     </div>
                                 </td>
                                 <td data-label="Delta"><?= htmlspecialchars($oficial['emp_delta']) ?></td>
                                 <td data-label="Puesto"><?= htmlspecialchars($oficial['emp_puesto']) ?></td>
                                 <td data-label="Rol"><?= htmlspecialchars($oficial['rol_detalle']) ?></td>
+                                <td data-label="Acciones">
+                                    <span class="p-relative">
+                                        <button class="dropdown-btn transparent-btn" type="button" title="More info">
+                                            <div class="sr-only">More info</div>
+                                            <i data-feather="more-horizontal" aria-hidden="true"></i>
+                                        </button>
+                                        <ul class="users-item-dropdown dropdown pt-1">
+                                            <li>
+                                                <a class="emp_ver" href="ajax/generar_hoja_vida.php?id=<?= $oficial['emp_id'] ?>" target="_blank">Expediente</a>
+                                            </li>
+                                        </ul>
+                                    </span>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>

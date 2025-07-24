@@ -32,7 +32,7 @@ if (($_SESSION['nivel_acceso'] != 1 || $_SESSION['nivel_acceso'] == 4 || $_SESSI
             window.location.href = '<?= BASE_PATH ?>/dashboard.php';
         });
     </script>
-<?php
+    <?php
     exit; // Para asegurarte que no siga cargando contenido
 }
 
@@ -43,6 +43,8 @@ require_once '../controllers/cotizacionController.php';
 $controller = new cotizacionesController();
 
 $productos = $controller->getProductos();
+$cotizaciones = $controller->getCotizaciones();
+$equipos_coti = $controller->get_equiposCoti();
 
 
 
@@ -51,6 +53,154 @@ function formatoFecha($fecha)
     if (empty($fecha)) return null;
     $fechaObj = DateTime::createFromFormat('d/m/Y', $fecha);
     return $fechaObj ? $fechaObj->format('Y-m-d') : null;
+}
+
+if (isset($_POST['nueva_coti'])) {
+    $errores = [];
+    $camposValidar = [
+        'num_coti'      => '# Cotización',
+        'fecha_emite'       => 'Fecha 1',
+        'fecha_valida'        => 'Fecha 2',
+        'Vendor'       => 'Vendedor',
+        'cliente'       => 'Cliente',
+        'telefono'        => 'Teléfono'
+    ];
+
+    foreach ($camposValidar as $campo => $nombreCampo) {
+        if (empty($_POST[$campo])) {
+            $errores[] = $nombreCampo;
+        }
+    }
+
+    if (empty($errores)) {
+        $cotizacion = $_POST['num_coti'];
+        $dateEmite = $_POST['fecha_emite'];
+        $dateValida = $_POST['fecha_valida'];
+        $saler = $_POST['Vendor'];
+        $cliente = $_POST['cliente'];
+        $tell = $_POST['telefono'];
+
+        $subtotal_general = $_POST['subtotal_general'];
+        $iva_general = $_POST['iva_general'];
+        $descuento_general = $_POST['descuento_general'];
+        $total_general = $_POST['total_general'];
+
+        if ($iva_general == "") {
+            $iva_general = 0;
+        }
+        if ($descuento_general == "") {
+            $descuento_general = 0;
+        }
+
+        $equipos = [];
+
+        if (isset($_POST['descripcion'])) {
+            for ($i = 0; $i < count($_POST['descripcion']); $i++) {
+                if ($_POST['iva'][$i] == "") {
+                    $_POST['iva'][$i] = 0;
+                }
+                if ($_POST['descuento'][$i] == "") {
+                    $_POST['descuento'][$i] = 0;
+                }
+                if ($_POST['iva_hidden'][$i] == "") {
+                    $_POST['iva_hidden'][$i] = 0;
+                }
+                if ($_POST['descuento_hidden'][$i] == "") {
+                    $_POST['descuento_hidden'][$i] = 0;
+                }
+                $equipos[] = [
+                    'descripcion' => $_POST['descripcion'][$i],
+                    'cantidad' => $_POST['cantidad'][$i],
+                    'precio' => $_POST['precio'][$i],
+                    'iva' => $_POST['iva'][$i],
+                    'descuento' => $_POST['descuento'][$i],
+                    'subtotal_hidden' => $_POST['subtotal_hidden'][$i],
+                    'iva_hidden' => $_POST['iva_hidden'][$i],
+                    'descuento_hidden' => $_POST['descuento_hidden'][$i],
+                    'total_hidden' => $_POST['total_hidden'][$i]
+                ];
+            }
+        }
+
+        $generaCoti = $controller->addCoti($cotizacion, $dateEmite, $dateValida, $saler, $cliente, $tell, $subtotal_general, $iva_general, $descuento_general, $total_general, $equipos);
+
+        if ($generaCoti == 'success') {
+    ?>
+            <script>
+                Swal.fire({
+                    title: '¡Felicidades!',
+                    text: 'La cotización fue registrada satisfactoriamente',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Descargar PDF',
+                    cancelButtonText: 'Cerrar',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.open('ajax/generar_pdf_cotizacion.php?coti=<?= urlencode($cotizacion) ?>', '_blank');
+                        window.location.href = '<?= BASE_PATH ?>/cotizaciones.php';
+                    } else {
+                        window.location.href = '<?= BASE_PATH ?>/cotizaciones.php';
+                    }
+                });
+            </script>
+        <?php
+        } else {
+        ?>
+            <script>
+                Swal.fire({
+                    title: 'Lo Sentimos',
+                    text: 'No se logró procesar la solicitud',
+                    icon: 'error',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cerrar',
+                }).then((result) => {
+
+
+                    window.location.href = '<?= BASE_PATH ?>/cotizaciones.php';
+
+                });
+            </script>
+        <?php
+        }
+    }
+}
+
+if (isset($_POST['btnEliminar'])) {
+    $id = $_POST['id'];
+    $eliminaCoti = $controller->deleteCoti($id);
+
+    if ($eliminaCoti == "success") {
+        ?>
+        <script>
+            Swal.fire({
+                title: '¡Felicidades!',
+                text: 'La cotización fue eliminada satisfactoriamente',
+                icon: 'success',
+                showCancelButton: true,
+                cancelButtonText: 'Cerrar',
+            }).then((result) => {
+                window.location.href = '<?= BASE_PATH ?>/cotizaciones.php';
+            });
+        </script>
+    <?php
+    } else {
+    ?>
+        <script>
+            Swal.fire({
+                title: 'Lo Sentimos',
+                text: 'No se logró procesar la solicitud',
+                icon: 'error',
+                showCancelButton: true,
+                cancelButtonText: 'Cerrar',
+            }).then((result) => {
+
+
+                window.location.href = '<?= BASE_PATH ?>/cotizaciones.php';
+
+            });
+        </script>
+<?php
+    }
 }
 
 
@@ -81,16 +231,11 @@ function formatoFecha($fecha)
 
         <hr class="line mt-1 mb-2 pb-2">
 
-        <!-- Tabla para las herramientas -->
-        <div id="botones-filtro" class="btn-group" role="group" aria-label="Basic mixed styles example">
-            <a href="<?= BASE_PATH ?>/empleadosHC.php" class="emp_activos btn btn-success" id="emp_activos">Acivos</a>
-            <button type="button" class="emp_inactivo btn btn-secondary" id="emp_inactivo" data-estado-ina="29">Inactivos</button>
-            <button type="button" class="emp_despedido btn btn-danger" id="emp_despedido" data-estado-desp="30">Egresado</button>
-        </div>
+
 
         <div class="tabla-inventarios" id="tabla-inventarios">
 
-            <h6 class="indicador m-2 p-2"><b><i>Colaboradores Activos</i></b></h6>
+
 
             <div class="row mb-3">
                 <!-- Buscador al centro -->
@@ -105,31 +250,23 @@ function formatoFecha($fecha)
             <table id="tablaTodos" class="display mt-2" style="width: 100%;">
                 <thead>
                     <tr>
-                        <th>Código</th>
-                        <th>Colaborador</th>
-                        <th>Teléfono</th>
-                        <th>Ingreso</th>
-                        <th>Departamento</th>
-                        <th>Rol</th>
+                        <th>Cotización</th>
+                        <th>Asesor</th>
+                        <th>Cliente</th>
+                        <th>Subtotal</th>
+                        <th>Total</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (is_array($colaboradores)): ?>
-                        <?php foreach ($colaboradores as $colab): ?>
+                    <?php if (is_array($cotizaciones)): ?>
+                        <?php foreach ($cotizaciones as $coti): ?>
                             <tr>
-                                <td data-label="Código"><?= $colab['emp_codigo'] ?></td>
-                                <td data-label="Colaborador">
-                                    <div>
-                                        <span style="color: blue;"><?= $colab['emp_cedula'] ?></span>
-                                        <p><?= $colab['emp_nombre'] . " " . $colab['emp_apellidos'] ?></p>
-                                    </div>
-                                </td>
-                                <td data-label="Teléfono"><?= $colab['emp_telefono'] ?></td>
-                                <td data-label="Ingreso"><?= date('d/m/Y', strtotime($colab['emp_fechaIngreso'])) ?></td>
-                                <td data-label="Departamento"><?= $colab['dep_detalle'] ?></td>
-                                <td data-label="Rol"><?= $colab['rol_detalle'] ?></td>
-
+                                <td data-label="Cotización"><?= $coti['cot_codigo'] ?></td>
+                                <td data-label="Asesor"><?= $coti['cot_vendor'] ?></td>
+                                <td data-label="Cliente"><?= $coti['cot_cliente'] ?></td>
+                                <td data-label="Subtotal"><?= number_format($coti['cot_subtotal'], 2, ',', ' ') ?></td>
+                                <td data-label="Total"><?= number_format($coti['cot_total'], 2, ',', ' ') ?></td>
                                 <td data-label="Acciones">
                                     <span class="p-relative">
                                         <button class="dropdown-btn transparent-btn" type="button" title="More info">
@@ -138,13 +275,13 @@ function formatoFecha($fecha)
                                         </button>
                                         <ul class="users-item-dropdown dropdown pt-1">
                                             <li>
-                                                <a class="emp_ver" href="#" data-bs-toggle="modal" data-bs-target="#modalVerColaborador" data-estado-ver="7" data-id="<?= $colab['emp_id'] ?>">Ver</a>
+                                                <a class="cot_ver" href="ajax/generar_pdf_cotizacion.php?coti=<?= $coti['cot_codigo'] ?>" target="_blank">Ver</a>
                                             </li>
                                             <li>
-                                                <a class="emp_editar" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-editar-id="<?= $colab['emp_id'] ?>">Editar</a>
+                                                <a class="coti_editar" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-id="<?= $coti['cot_id'] ?>">Editar</a>
                                             </li>
                                             <li>
-                                                <a class="emp_situacion" href="#" data-bs-toggle="modal" data-bs-target="#modalSituacion" data-estado-situacion="6" data-situacion-id="<?= $colab['emp_id'] ?>">Situación</a>
+                                                <a class="cot_eliminar" href="#" data-id="<?= $coti['cot_id'] ?>" data-codigo="<?= $coti['cot_codigo'] ?>" data-eliminar="6" data-bs-toggle="modal" data-bs-target="#modalEliminar">Eliminar</a>
                                             </li>
                                         </ul>
                                     </span>
@@ -153,7 +290,7 @@ function formatoFecha($fecha)
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6">No hay herramientas para mostrar.</td>
+                            <td colspan="6">No hay usuarios para mostrar.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -230,25 +367,6 @@ function formatoFecha($fecha)
     </div>
     <!-- Modal de productos -->
 
-
-    <!-- Inicio Modal Ver -->
-    <div class="modal fade" id="modalVerColaborador" tabindex="-1" aria-labelledby="modalVerColaboradorLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-
-                <div class="modal-header p-2">
-                    <h6 class="modal-title" id="modalVerColaboradorLabel"><b>Infromación del Colaborador</b></h6>
-                    <button type="button" class="btn-close p-1 me-2 mt-1" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-
-                <div id="formulario-ver">
-
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Fin Modal Ver -->
-
     <!-- Inicio Modal Editar -->
     <div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -268,21 +386,23 @@ function formatoFecha($fecha)
     </div>
     <!-- Fin Modal Editar -->
 
-    <!-- Inicio Modal Situacion -->
-    <div class="modal fade" id="modalSituacion" tabindex="-1" aria-labelledby="modalSituacionLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
+    <!-- Inicio Modal Eliminar -->
+    <div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header py-1 px-2">
-                    <h6 class="modal-title" id="modalSituacionLabel"><b>Cambiar Situación del Colaborador</b></h6>
-                    <button type="button" class="btn-close p-1 me-2 mt-1" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <h5 class="modal-title d-flex align-items-center">
+                        <i class="me-2" data-feather="alert-triangle"></i> ¿Estás seguro de eliminar?
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div id="formulario-situacion">
+                <div id="formularioEliminar">
 
                 </div>
             </div>
         </div>
     </div>
-    <!-- Inicio Modal Situacion -->
+    <!-- Inicio Modal Eliminar -->
 
 
 </main>
@@ -340,8 +460,6 @@ function formatoFecha($fecha)
     });
 </script>
 
-
-
 <!-- Código JavaScript -->
 <script>
     let tabla; // Variable global
@@ -373,6 +491,21 @@ function formatoFecha($fecha)
 
     // Productos pasados desde PHP
     const productos = <?php echo json_encode($productos, JSON_UNESCAPED_UNICODE); ?>;
+
+    // Nivel de Acceso desde PHP
+    const acceso = <?php echo json_encode($_SESSION['nivel_acceso']); ?>;
+
+    let desc_max;
+
+    switch (acceso) {
+        case 1:
+        case 4:
+            desc_max = 20;
+            break;
+        default:
+            desc_max = 5;
+            break;
+    }
 
     // Evento para cargar el formulario y agregar el primer equipo
     document.querySelector('.coti_nueva').addEventListener('click', function() {
@@ -430,19 +563,49 @@ function formatoFecha($fecha)
                 </div>
                 <div class="col-md-1">
                     <label class="form-label">Desc. %</label>
-                    <input type="text" name="descuento[]" class="form-control descuentoInput" min="0" max="100">
+                    <input type="number" name="descuento[]" class="form-control descuentoInput" min="0" max="${desc_max}">
+                    <div class="form-text text-danger aviso-descuento d-none">
+                        ⚠ Máx: ${desc_max}%
+                    </div>
                 </div>
                 <div class="col-md-2 text-center resumen-precios">
                     <div><small>Subtotal: ₡<span class="subtotal">0.00</span></small></div>
                     <div><small>IVA: ₡<span class="iva">0.00</span></small></div>
                     <div><small>Desc: ₡<span class="descuento">0.00</span></small></div>
                     <div><strong>Total: ₡<span class="total">0.00</span></strong></div>
+
+                    <!-- 🟡 Inputs ocultos para enviar al backend -->
+                    <input type="hidden" name="subtotal_hidden[]" class="subtotal-hidden">
+                    <input type="hidden" name="iva_hidden[]" class="iva-hidden">
+                    <input type="hidden" name="descuento_hidden[]" class="descuento-hidden">
+                    <input type="hidden" name="total_hidden[]" class="total-hidden">
                 </div>
                 <div class="col-md-1 d-flex align-items-end">
                     <button type="button" class="btn btn-danger w-100" onclick="this.closest('.equipo').remove(); recalcularPrecios();">🗑️</button>
                 </div>
             </div>
         `;
+
+        const descuentoInputs = nuevoEquipo.querySelectorAll('.descuentoInput');
+
+        descuentoInputs.forEach(input => {
+            const aviso = input.parentElement.querySelector('.aviso-descuento');
+
+            input.addEventListener('input', function() {
+                let valor = parseFloat(this.value);
+
+                if (valor > desc_max) {
+                    this.value = desc_max;
+                    aviso.classList.remove('d-none');
+                } else {
+                    aviso.classList.add('d-none');
+                }
+
+                if (valor < 0) {
+                    this.value = 0;
+                }
+            });
+        });
 
         contenedor.appendChild(nuevoEquipo);
     }
@@ -551,6 +714,12 @@ function formatoFecha($fecha)
             item.querySelector('.iva').innerText = formatearPrecio(iva.toFixed(2));
             item.querySelector('.total').innerText = formatearPrecio(total.toFixed(2));
 
+            // Cargar en inputs ocultos
+            item.querySelector('.subtotal-hidden').value = subtotal.toFixed(2);
+            item.querySelector('.iva-hidden').value = iva.toFixed(2);
+            item.querySelector('.descuento-hidden').value = descuento.toFixed(2);
+            item.querySelector('.total-hidden').value = total.toFixed(2);
+
         });
 
         calcularTotalesGenerales();
@@ -596,169 +765,185 @@ function formatoFecha($fecha)
     });
 </script>
 
-
-
-<!-- Petición Ajax Editar Colaborador -->
+<!-- Petición Ajax Editar -->
 <script>
-    document.addEventListener('click', function(e) {
-        const btn = e.target.closest('.emp_editar');
-        if (btn) {
-            const estado = btn.getAttribute('data-estado-editar');
-            const empID = btn.getAttribute('data-editar-id');
-            const contenedor = document.getElementById('formulario-editar');
+    // Cotización y Equipos Asociados
+    const cotizacion = <?= json_encode($cotizaciones); ?>;
+    const equipos = <?= json_encode($equipos_coti); ?>;
 
-            contenedor.innerHTML = '<div class="text-center">Cargando...</div>';
 
-            fetch('ajax/formularios-colaborador.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: 'estado=' + encodeURIComponent(estado)
-                })
-                .then(res => res.text())
-                .then(data => {
-                    contenedor.innerHTML = data;
+    // Variable global para el input activo en el modal
+    let inActual = null;
 
-                    // Ejecutar funciones adicionales si existen
-                    if (typeof fechas === 'function') fechas();
-                    if (typeof asignarEventosRoles === 'function') asignarEventosRoles();
+    // Productos pasados desde PHP
+   
 
-                    // Cargar inputs después de que el DOM se actualice
-                    setTimeout(() => {
-                        if (typeof cargarInputs === 'function') cargarInputs(empID);
-                    }, 50);
-                })
-                .catch(err => {
-                    contenedor.innerHTML = '<div class="text-danger">Error al cargar el formulario.</div>';
-                    console.error('Error AJAX:', err);
-                });
-        }
+    // Nivel de Acceso desde PHP
+    const acceso = <?php echo json_encode($_SESSION['nivel_acceso']); ?>;
+
+    let descuento_max;
+
+    switch (acceso) {
+        case 1:
+        case 4:
+            descuento_max = 20;
+            break;
+        default:
+            descuento_max = 5;
+            break;
+    }
+
+    // Evento para cargar el formulario y agregar el primer equipo
+    document.querySelector('.coti_editar').addEventListener('click', function() {
+        const estado = this.getAttribute('data-estado-editar');
+        const id_editar = this.getAttribute('data-id');
+        const contenedor = document.getElementById('formulario-editar');
+
+        contenedor.innerHTML = '<div class="text-center">Cargando...</div>';
+
+        fetch('ajax/formularios-cotizacion.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'estado=' + encodeURIComponent(estado)
+            })
+            .then(res => res.text())
+            .then(data => {
+                contenedor.innerHTML = data;
+
+                // realiza la busqueda en el arreglo e iguala los valores a "cotizacion"
+                const coti = cotizacion.find(p => p.cot_id == id_editar);
+                if (!coti) {
+                    console.error('Cotización no encontrada:', id_editar);
+                    return;
+                }
+
+                funcionesFormulario_Editar(coti, id_editar);
+
+
+
+
+
+
+                agregarEquipo(); // Agrega la primera fila para equipos
+            })
+            .catch(err => {
+                contenedor.innerHTML = '<div class="text-danger">Error al cargar el formulario.</div>';
+                console.error('Error AJAX:', err);
+            });
     });
 
-    function fechas() {
-        flatpickr("#fecha_ingreso", {
-            dateFormat: "d/m/Y"
+    function funcionesFormulario_Editar(coti, id_editar) {
+        // Llenar los inputs actuales
+        document.getElementById('id').value = coti.cot_id;
+        document.getElementById('num_coti').value = coti.cot_codigo;
+        document.getElementById('fecha_emite').value = coti.cot_fecha1;
+        document.getElementById('fecha_valida').value = coti.cot_fecha2;
+        document.getElementById('Vendor').value = coti.cot_vendor;
+        document.getElementById('cliente').value = coti.cot_cliente;
+        document.getElementById('telefono').value = coti.cot_telefono;
+        document.getElementById('subtotal_general').value = coti.cot_subtotal;
+        document.getElementById('iva_general').value = coti.cot_iva;
+        document.getElementById('descuento_general').value = coti.cot_descuento;
+        document.getElementById('total_general').value = coti.cot_total;
+
+        // Cargar los equipos asociaodos a la cotizacion
+        const equipo = equipos.filter(eq => Number(eq.cteq_coti_id) === Number(id_editar));
+        const contenedor = document.getElementById('equiposContainer');
+        contenedor.innerHTML = ''; // Limpiar contenedor actual
+
+        equipo.forEach(eq => {
+            const equipoNuevo = document.createElement('div');
+            equipoNuevo.className = 'equipo border rounded-3 p-3 mb-3 shadow-sm';
+
+            equipoNuevo.innerHTML = `
+            <div class="row mb-2 equipo-item">
+                <div class="col-md-4">
+                    <label class="form-label">Descripción</label>
+                    <div class="input-group">
+                        <input type="text" name="descripcion[]" class="form-control descripcion" value="${eq.cteq_detalle}">
+                        <button type="button" class="btn btn-outline-secondary" onclick="abrirModalProductos(this)">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Cant.</label>
+                    <input type="number" name="cantidad[]" class="form-control cantidad" min="1" value="1" value="${eq.cteq_can}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Precio</label>
+                    <input type="text" name="precio[]" class="form-control precio" min="0" step="0.01" value="${eq.cteq_precio}">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">IVA %</label>
+                    <input type="text" name="iva[]" class="form-control impuesto" value = "13" value="${eq.cteq_iva}">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Desc. %</label>
+                    <input type="number" name="descuento[]" class="form-control descuentoInput" min="0" max="${descuento_max}" value="${eq.cteq_descuento}">
+                    <div class="form-text text-danger aviso-descuento d-none">
+                        ⚠ Máx: ${descuento_max}%
+                    </div>
+                </div>
+                <div class="col-md-2 text-center resumen-precios">
+                    <div><small>Subtotal: ₡<span class="subtotal" value="${eq.cteq_subtotal}">0.00</span></small></div>
+                    <div><small>IVA: ₡<span class="iva" value="${eq.cteq_sub_iva}">0.00</span></small></div>
+                    <div><small>Desc: ₡<span class="descuento" value="${eq.cteq_sub_desc}>0.00</span></small></div>
+                    <div><strong>Total: ₡<span class="total" value="${eq.cteq_total_linea}">0.00</span></strong></div>
+
+                    <!-- 🟡 Inputs ocultos para enviar al backend -->
+                    <input type="hidden" name="subtotal_hidden[]" class="subtotal-hidden" value="${eq.cteq_subtotal}">
+                    <input type="hidden" name="iva_hidden[]" class="iva-hidden" value="${eq.cteq_sub_iva}">
+                    <input type="hidden" name="descuento_hidden[]" class="descuento-hidden" value="${eq.cteq_sub_desc}">
+                    <input type="hidden" name="total_hidden[]" class="total-hidden" value="${eq.cteq_total_linea}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger w-100" onclick="this.closest('.equipo').remove(); recalcularPrecios();">🗑️</button>
+                </div>
+            </div>
+        `;
+            contenedor.appendChild(equipoNuevo);
         });
-        flatpickr("#fecha_psicologico", {
-            dateFormat: "d/m/Y"
-        });
-        flatpickr("#fecha_arma", {
-            dateFormat: "d/m/Y"
-        });
-        flatpickr("#fecha_agente", {
-            dateFormat: "d/m/Y"
-        });
-        flatpickr("#fecha_huellas", {
-            dateFormat: "d/m/Y"
-        });
-        flatpickr("#fecha_vacaciones", {
-            mode: "range",
-            dateFormat: "d/m/Y"
-        });
+
+
     }
 
-    function asignarEventosRoles() {
-        const deptoSelect = document.getElementById('depto');
-        const rolSelect = document.getElementById('rol');
-        const fechasSeguridad = document.getElementById('fechas-seguridad');
+    
 
-        if (!deptoSelect || !rolSelect) {
-            console.warn("No se encontró alguno de los elementos: #depto o #rol");
-            return;
-        }
-
-        deptoSelect.addEventListener('change', function() {
-            const deptoId = this.value;
-
-            // Mostrar u ocultar fechas si es Seguridad
-            if (fechasSeguridad) {
-                if (deptoId === '7') {
-                    fechasSeguridad.classList.remove('d-none');
-                } else {
-                    fechasSeguridad.classList.add('d-none');
-                }
-            }
-
-            // Limpiar y llenar select de roles
-            rolSelect.innerHTML = '<option value="">Seleccione</option>';
-            if (deptoId === '') return;
-
-            const rolesFiltrados = roles.filter(rol => rol.rol_dep_id == deptoId);
-            rolesFiltrados.forEach(rol => {
-                const option = document.createElement('option');
-                option.value = rol.rol_id;
-                option.textContent = rol.rol_detalle;
-                rolSelect.appendChild(option);
-            });
-        });
-    }
-
-    function formatearFechaDMY(fechaISO) {
-        if (!fechaISO) return '';
-        const [anio, mes, dia] = fechaISO.split("-");
-        return `${dia}/${mes}/${anio}`;
-    }
-
-    function cargarInputs(empID) {
-        const colaboradores = <?= json_encode($colaboradores_general); ?>;
-
-        const colaborador = colaboradores.find(p => p.emp_id == empID);
-
-        if (!colaborador) {
-            console.error('No se encontró al colaborador: ', empID);
-            return;
-        }
-
-        document.getElementById('id').value = colaborador.emp_id;
-        document.getElementById('imagen_actual').value = colaborador.emp_foto;
-        document.getElementById('name').value = colaborador.emp_nombre;
-        document.getElementById('apellido').value = colaborador.emp_apellidos;
-        document.getElementById('cedula').value = colaborador.emp_cedula;
-        document.getElementById('telefono').value = colaborador.emp_telefono;
-        document.getElementById('email').value = colaborador.emp_correo;
-        document.getElementById('fecha_ingreso').value = formatearFechaDMY(colaborador.emp_fechaIngreso);
-        document.getElementById('direccion').value = colaborador.emp_direccion;
-        document.getElementById('salario').value = colaborador.emp_salario;
-        document.getElementById('cuenta').value = colaborador.emp_cuenta;
-        document.getElementById('fecha_vacaciones').value = colaborador.emp_vacaciones;
-        document.getElementById('licencias').value = colaborador.emp_licencias;
-
-        // Setear el departamento y disparar el evento para cargar roles y fechas
-        const deptoSelect = document.getElementById('depto');
-        deptoSelect.value = colaborador.emp_dep_id;
-        deptoSelect.dispatchEvent(new Event('change'));
-
-        // Esperar un momento para que los roles se carguen antes de asignar el valor
-        setTimeout(() => {
-            document.getElementById('rol').value = colaborador.emp_rol_id;
-        }, 100);
+ 
 
 
-        document.getElementById('fecha_agente').value = formatearFechaDMY(colaborador.emp_carnetAgente);
-        document.getElementById('fecha_arma').value = formatearFechaDMY(colaborador.emp_carnetArma);
-        document.getElementById('fecha_psicologico').value = formatearFechaDMY(colaborador.emp_testPsicologico);
-        document.getElementById('fecha_huellas').value = formatearFechaDMY(colaborador.emp_huellas);
-        document.getElementById('delta').value = colaborador.emp_delta;
-        document.getElementById('puesto').value = colaborador.emp_puesto;
-    }
+   
+
+
+
+
+   
+
+
+
+  
+
 </script>
 
-<!-- Petición Ajax Situacion Colaborador -->
+<!-- Petición Ajax Eliminar Producto -->
 <script>
     document.addEventListener('click', function(e) {
         // Verificamos si el elemento clickeado es un botón de eliminación
-        if (e.target.closest('.emp_situacion')) {
-            const btn = e.target.closest('.emp_situacion'); // El botón de eliminación que fue clickeado
-            const estado = btn.getAttribute('data-estado-situacion');
-            const id = btn.getAttribute('data-situacion-id');
-            const contenedor = document.getElementById('formulario-situacion');
+        if (e.target.closest('.cot_eliminar')) {
+            const btn = e.target.closest('.cot_eliminar'); // El botón de eliminación que fue clickeado
+            const estado = btn.getAttribute('data-eliminar');
+            const id = btn.getAttribute('data-id');
+            const codigo = btn.getAttribute('data-codigo');
+            const contenedor = document.getElementById('formularioEliminar');
 
             // Mostrar mensaje de carga
             contenedor.innerHTML = '<div class="text-center">Cargando...</div>';
 
             // Hacer petición AJAX para cargar el formulario de eliminación
-            fetch('ajax/formularios-colaborador.php', {
+            fetch('ajax/formularios-cotizacion.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded'
@@ -770,53 +955,28 @@ function formatoFecha($fecha)
                     // Insertar el contenido recibido en el contenedor
                     contenedor.innerHTML = data;
 
-                    cargardatos(id);
+                    // Llamar a la función que maneja el formulario del modal
+                    funcioneFormulario_eliminar(id, codigo);
 
-                    ClassicEditor
-                        .create(document.querySelector('#observaciones'))
-                        .catch(error => {
-                            console.error(error);
-                        });
-
-                    // Mostrar el modal de situacion
-                    const modalSituacionElement = document.getElementById('modalSituacion');
-                    const modal = bootstrap.Modal.getOrCreateInstance(modalSituacionElement);
+                    // Mostrar el modal de eliminación
+                    const modalEliminarElement = document.getElementById('modalEliminar');
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEliminarElement);
                     modal.show();
                 })
                 .catch(err => {
-                    contenedor.innerHTML = '<div class="text-danger">Error al cargar el formulario de eliminar.</div>';
+                    contenedor.innerHTML = '<div class="text-danger">Error al cargar el formulario de eliminación.</div>';
                     console.error('Error AJAX:', err);
                 });
         }
     });
 
-
-    function formatearFechaDMY(fechaISO) {
-        if (!fechaISO) return '';
-        const [anio, mes, dia] = fechaISO.split("-");
-        return `${dia}/${mes}/${anio}`;
-    }
-
-    function cargardatos(id) {
-        const colaboradores = <?= json_encode($colaboradores_general); ?>;
-
-        const colaborador = colaboradores.find(p => p.emp_id == id);
-
-        if (!colaborador) {
-            console.error('No se encontró al colaborador: ', id);
-            return;
-        }
-
-        document.getElementById('id').value = colaborador.emp_id;
-        document.getElementById('name').value = colaborador.emp_nombre;
-        document.getElementById('apellido').value = colaborador.emp_apellidos;
-        document.getElementById('cedula').value = colaborador.emp_cedula;
-        document.getElementById('telefono').value = colaborador.emp_telefono;
-        document.getElementById('fecha_ingreso_situacion').value = formatearFechaDMY(colaborador.emp_fechaIngreso);
-        document.getElementById('estado').value = colaborador.emp_estado;
+    function funcioneFormulario_eliminar(id, codigo) {
+        // Aquí puedes gestionar el formulario de eliminación con los valores que recibas
+        console.log(id, '/', codigo);
+        document.getElementById('eliminarId').value = id;
+        document.getElementById('codigoEliminarTexto').textContent = codigo;
     }
 </script>
-
 
 <?php
 // Incluir el footer

@@ -261,6 +261,33 @@ class usuarioModel
         }
     }
 
+    public function get_empleadoID($id)
+    {
+        try {
+            $stmt = $this->conn->prepare("CALL sp_get_empleadoID(:p_id)");
+            $stmt->bindParam(':p_id', $id);
+
+            if ($stmt->execute()) {
+                $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $stmt->closeCursor();
+
+                if (!empty($result)) {
+                    return $result; // Retorna los datos del proveedor
+                } else {
+                    return 'error'; // Retorna error si no hay datos
+                }
+            } else {
+                return 'error'; // Si la consulta falla
+            }
+        } catch (PDOException $e) {
+            $error = $e->getMessage();
+            echo "<script>console.error(" . json_encode("Error: $error") . ");</script>";
+            return ['error' => 'Excepción: ' . $error];
+        }
+    }
+
+
     /**
      * FUNCIONES PARA AGREGAR
      */

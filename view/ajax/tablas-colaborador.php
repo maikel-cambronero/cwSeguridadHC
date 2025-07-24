@@ -64,7 +64,7 @@ if (isset($_POST['estado'])) {
                                         <!-- Menú desplegable de acciones -->
                                         <ul class="users-item-dropdown dropdown-menu" id="desplegar">
                                             <li>
-                                                <a class="emp_ver" href="#" data-bs-toggle="modal" data-bs-target="#modalVerColaborador" data-estado-ver="7" data-id="<?= $colab['emp_id'] ?>">Ver</a>
+                                                <a class="emp_ver" href="ajax/generar_hoja_vida.php?id=<?= $colab['emp_id'] ?>" target="_blank">Expediente</a>
                                             </li>
                                             <li>
                                                 <a class="emp_editar" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-editar-id="<?= $colab['emp_id'] ?>">Editar</a>
@@ -143,7 +143,7 @@ if (isset($_POST['estado'])) {
                                         <!-- Menú desplegable de acciones -->
                                         <ul class="users-item-dropdown dropdown-menu" id="desplegar">
                                             <li>
-                                                <a class="emp_ver" href="#" data-bs-toggle="modal" data-bs-target="#modalVerColaborador" data-estado-ver="7" data-id="<?= $colab['emp_id'] ?>">Ver</a>
+                                                <a class="emp_ver" href="ajax/generar_hoja_vida.php?id=<?= $colab['emp_id'] ?>" target="_blank">Expediente</a>
                                             </li>
                                             <li>
                                                 <a class="emp_editar" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-editar-id="<?= $colab['emp_id'] ?>">Editar</a>

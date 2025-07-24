@@ -213,4 +213,28 @@ class seguridadModel
             return ['error' => 'Excepción: ' . $e->getMessage()];
         }
     }
+
+    /**
+     * OTRAS FUNCIONES
+     */
+
+    public function asignaEquipo($id, $stock, $condicion, $colaborador, $detalle)
+    {
+        try {
+            $stm = $this->conn->prepare('CALL sp_asigna_equipo(:p_id, :p_cantidad1, :p_condicion, :p_asigana, :p_detalle)');
+            $stm->bindParam(':p_id', $id);
+            $stm->bindParam(':p_cantidad1', $stock);
+            $stm->bindParam(':p_condicion', $condicion);
+            $stm->bindParam(':p_asigana', $colaborador);
+            $stm->bindParam(':p_detalle', $detalle);
+
+            if ($stm->execute()) {
+                return "success";
+            } else {
+                return "error";
+            }
+        } catch (PDOException $e) {
+            return ['error' => 'Excepción: ' . $e->getMessage()];
+        }
+    }
 }

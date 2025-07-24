@@ -32,6 +32,86 @@ class cotizacionesController
         }
     }
 
+    public function get_coti_codigo($numCoti)
+    {
+        $model = new cotizacionesModel();
+        $cotizacion = $model->get_coti_codigo($numCoti);
+
+        if ($cotizacion != 'error') {
+            return $cotizacion;
+        } else {
+            return 'error';
+        }
+    }
+
+    public function get_equiposCoti_codigo($cot_id)
+    {
+        $model = new cotizacionesModel();
+        $equipos = $model->get_equiposCoti_codigo($cot_id);
+
+        if ($equipos != 'error') {
+            return $equipos;
+        } else {
+            return 'error';
+        }
+    }
+
+    public function getCotizaciones()
+    {
+        $model = new cotizacionesModel();
+        $cotizaciones = $model->getCotizaciones();
+
+        if ($cotizaciones != 'error') {
+            return $cotizaciones;
+        } else {
+            return 'error';
+        }
+    }
+
+    public function get_equiposCoti()
+    {
+        $model = new cotizacionesModel();
+        $equipos = $model->get_equiposCoti();
+
+        if ($equipos != 'error') {
+            return $equipos;
+        } else {
+            return 'error';
+        }
+    }
+
+    /**
+     * FUNCIONES PARA AGREGAR
+     */
+
+    public function addCoti($cotizacion, $dateEmite, $dateValida, $saler, $cliente, $tell, $subtotal_general, $iva_general, $descuento_general, $total_general, $equipos)
+    {
+        $model = new cotizacionesModel();
+        $cotizacion = $model->addCoti($cotizacion, $dateEmite, $dateValida, $saler, $cliente, $tell, $subtotal_general, $iva_general, $descuento_general, $total_general, $equipos);
+
+        if ($cotizacion == 'success') {
+            return 'success';
+        } else {
+            return 'error';
+        }
+    }
+
+    /**
+     * FUNCIONES PARA ELIMINAR
+     */
+
+    public function deleteCoti($id)
+    {
+        $model = new cotizacionesModel();
+        $deleteCoti = $model->deleteCoti($id);
+
+        if ($deleteCoti == 'success') {
+            return 'success';
+        } else {
+            return 'error';
+        }
+    }
+
 
 
 

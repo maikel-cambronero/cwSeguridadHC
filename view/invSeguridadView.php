@@ -151,6 +151,83 @@ if (isset($_POST['nuevo'])) {
     }
 }
 
+if (isset($_POST['asignar'])) {
+    $errores = [];
+    $camposValidar = [
+        'detalle' => 'Detalle',
+        'condicion' => 'Condición',
+        'colaborador' => 'Asignr a:',
+        'cantidad_asigna' => 'cantidad Asignar'
+    ];
+
+    foreach ($camposValidar as $campo => $nombreCampo) {
+        if (empty($_POST[$campo])) {
+            $errores[] = $nombreCampo;
+        }
+    }
+
+    if (empty($errores)) {
+
+        $id = $_POST['id'];
+        $stock = $_POST['cantidad_asigna'];
+        $condicion = $_POST['condicion'];
+        $colaborador = $_POST['colaborador'];
+        $detalle = $_POST['detalle'];
+
+        $asignar = $controller->asignaEquipo($id, $stock, $condicion, $colaborador, $detalle);
+
+        if ($asignar == 'success') {
+    ?>
+            <script>
+                let errores = <?= json_encode(implode("\n", $errores)); ?>;
+                swal.fire({
+                    title: 'Felecicdades',
+                    text: 'El equipo fue asignado satisfactoriamente',
+                    icon: 'success',
+                    confirmButtonText: 'Volver',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '<?= BASE_PATH ?>/invSeguridad.php';
+                    }
+                })
+            </script>
+        <?php
+        } else {
+        ?>
+            <script>
+                let errores = <?= json_encode(implode("\n", $errores)); ?>;
+                swal.fire({
+                    title: 'Error',
+                    text: 'No se pudo asignar el equipo.',
+                    icon: 'error',
+                    confirmButtonText: 'Volver',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '<?= BASE_PATH ?>/invSeguridad.php';
+                    }
+                })
+            </script>
+        <?php
+        }
+    } else {
+        ?>
+        <script>
+            let errores = <?= json_encode(implode("\n", $errores)); ?>;
+            swal.fire({
+                title: 'Error',
+                text: 'Los siguientes campos son requeridos: \n ' + errores,
+                icon: 'error',
+                confirmButtonText: 'Volver',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '<?= BASE_PATH ?>/invSeguridad.php';
+                }
+            })
+        </script>
+    <?php
+    }
+}
+
 if (isset($_POST['eliminar'])) {
     $id = $_POST['id'];
 
@@ -372,7 +449,10 @@ if (isset($_POST['editar'])) {
                                             </button>
                                             <ul class="users-item-dropdown dropdown pt-1">
                                                 <li>
-                                                    <a class="editar_equipo" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-asignado="0" data-editar-id="<?= $equip['segd_id'] ?>">Editar</a>
+                                                    <a class="asignar_equipo" href="#" data-bs-toggle="modal" data-bs-target="#modalAsignar" data-estado-asignar="7" data-asignar-id="<?= $equip['segd_id'] ?>">Asignar</a>
+                                                </li>
+                                                <li>
+                                                    <a class="editar_equipo" href="#" data-bs-toggle="modal" data-bs-target="#modalEditar" data-estado-editar="5" data-editar-id="<?= $equip['segd_id'] ?>">Editar</a>
                                                 </li>
                                                 <li>
                                                     <a class="eliminar_producto" href="#" data-bs-toggle="modal" data-bs-target="#modalEliminar" data-estado-eliminar="6" data-id="<?= $equip['segd_id'] ?>" data-codigo="<?= $equip['segd_detalle'] ?>">Eliminar</a>
@@ -417,6 +497,25 @@ if (isset($_POST['editar'])) {
         </div>
     </div>
     <!-- Fin Modal Producto Nuevo -->
+
+    <!-- Inicio Modal Asignar -->
+    <div class="modal fade" id="modalAsignar" tabindex="-1" aria-labelledby="modalAsignarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+
+                <div class="modal-header p-2">
+                    <h6 class="modal-title" id="modalAsignarLabel"><b>Asignar Equipo</b></h6>
+                    <button type="button" class="btn-close p-1 me-2 mt-1" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div id="formulario-Asignar">
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- Fin Modal Asignar -->
 
     <!-- Inicio Modal Editar -->
     <div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
@@ -636,10 +735,75 @@ if (isset($_POST['editar'])) {
     }
 </script>
 
-<!-- Petición Ajax Editar Producto -->
+<!-- Petición Ajax Asignar Equipo -->
 <script>
+    // Productos
+    const Asignado = <?= json_encode($equipoAsignado); ?>;
+    const Generales = <?= json_encode($equipo); ?>;
 
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.asignar_equipo')) {
+            const btn = e.target.closest('.asignar_equipo');
+            const estado = btn.getAttribute('data-estado-asignar');
+            const herramientaID = parseInt(btn.getAttribute('data-asignar-id'), 10);
+            const asignado = 0;
+
+            const equipos = (asignado === 0) ? Generales : Asignado;
+
+            const contenedor = document.getElementById('formulario-Asignar');
+            contenedor.innerHTML = '<div class="text-center">Cargando...</div>';
+
+            fetch('ajax/formularios-invSeguridad.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'estado=' + encodeURIComponent(estado)
+                })
+                .then(res => res.text())
+                .then(data => {
+                    contenedor.innerHTML = data;
+                    subcategoria();
+
+                    const equipo = equipos.find(p => p.segd_id == herramientaID);
+                    if (!equipo) {
+                        console.error('Producto no encontrado:', herramientaID);
+                        return;
+                    }
+
+                    requestAnimationFrame(() => {
+                        funcionesFormulario_Asignar(equipo);
+
+                        const modalEditarElement = document.getElementById('modalAsignar');
+                        const modal = bootstrap.Modal.getOrCreateInstance(modalEditarElement);
+
+                        modalEditarElement.addEventListener('shown.bs.modal', function() {
+                            const btnClose = modalEditarElement.querySelector('.btn-close');
+                            if (btnClose) {
+                                btnClose.focus();
+                            }
+                        });
+
+                        modal.show();
+                    });
+                })
+                .catch(err => {
+                    contenedor.innerHTML = '<div class="text-danger">Error al cargar el formulario.</div>';
+                    console.error('Error AJAX:', err);
+                });
+        }
+    });
+
+    function funcionesFormulario_Asignar(equipo) {
+        // Rellenar campos
+        document.getElementById('id').value = equipo.segd_id;
+        document.getElementById('condicion').value = equipo.segd_condicion;
+        document.getElementById('colaborador').value = equipo.segd_empl_IDempleado;
+        document.getElementById('detallHerramienta').value = equipo.segd_detalle;
+    }
 </script>
+
+<!-- Petición Ajax Editar Producto -->
 <script>
     // Productos
     const equipoAsignado = <?= json_encode($equipoAsignado); ?>;
@@ -651,7 +815,7 @@ if (isset($_POST['editar'])) {
             const btn = e.target.closest('.editar_equipo');
             const estado = btn.getAttribute('data-estado-editar');
             const herramientaID = parseInt(btn.getAttribute('data-editar-id'), 10);
-            const asignado = parseInt(btn.getAttribute('data-asignado'), 10);
+            const asignado = 0;
 
             const herramientas = (asignado === 0) ? equiposGenerales : equipoAsignado;
 
@@ -719,7 +883,7 @@ if (isset($_POST['editar'])) {
 
 
         document.getElementById('colaborador').value = herramienta.segd_empl_IDempleado;
-        document.getElementById('detallHerramienta').value = herramienta.segd_detalle;
+        document.getElementById('detalle').value = herramienta.segd_detalle;
     }
 
     function subcategoria() {

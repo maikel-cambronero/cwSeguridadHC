@@ -113,4 +113,20 @@ class seguridadConroller
         }
     }
 
+    /**
+     * OTRAS FUNCIONES
+     */
+
+    public function asignaEquipo($id, $stock, $condicion, $colaborador, $detalle)
+    {
+        $model = new seguridadModel();
+        $function = $model->asignaEquipo($id, $stock, $condicion, $colaborador, $detalle);
+
+        if ($function === "success") {
+            return "success";
+        } else {
+            return "error";
+        }
+    }
+
 }

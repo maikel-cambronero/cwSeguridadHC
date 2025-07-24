@@ -61,6 +61,7 @@ if (isset($_POST['estado'])) {
                                 <select class="form-select" name="colaborador" id="colaborador">
                                     <option value="">Seleccione una opción</option>
                                     <option value="0">Sin Asignar</option>
+                                    <option value="9000">Bodega</option>
                                     <?php foreach ($listaColaboradores as $colaborador): ?>
                                         <option value="<?= $colaborador['emp_id'] ?>">
                                             <?= $colaborador['emp_nombre'] ?>
@@ -135,26 +136,9 @@ if (isset($_POST['estado'])) {
                             </select>
                         </div>
 
-                        <div class="col-12 col-sm-6">
-                            <label for="colaborador" class="form-label">Colaborador</label>
-                            <?php if ($listaColaboradores != 'error'): ?>
-                                <select class="form-select" name="colaborador" id="colaborador">
-                                    <option value="">Seleccione una opción</option>
-                                    <option value="0">Sin Asignar</option>
-                                    <?php foreach ($listaColaboradores as $colaborador): ?>
-                                        <option value="<?= $colaborador['emp_id'] ?>">
-                                            <?= $colaborador['emp_nombre'] ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            <?php else: ?>
-                                <p>No se encontraron colaboradores disponibles.</p>
-                            <?php endif; ?>
-                        </div>
-
                         <div class="col-12 col-sm-6 col-md-12">
                             <label for="detalle" class="form-label">Detalle</label>
-                            <input type="text" class="form-control" id="detallHerramienta" name="detalle">
+                            <input type="text" class="form-control" id="detalle" name="detalle">
                         </div>
 
                     </div>
@@ -179,6 +163,57 @@ if (isset($_POST['estado'])) {
                     <button type="button" class="btn btn-secondary me-2 fs-6" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" name="eliminar" class="btn btn-danger fs-6">Eliminar</button>
                 </div>
+            </form>
+        <?php
+            break;
+        case '7':
+        ?>
+            <form action="" method="post">
+                <div class="modal-body">
+
+                    <input type="hidden" name="id" id="id">
+
+                    <div class="row g-2">
+                        <div class="col-12 col-sm-6 col-md-12">
+                            <label for="detalle" class="form-label">Detalle</label>
+                            <input type="text" class="form-control" id="detallHerramienta" name="detalle">
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <label for="condicion" class="form-label">Condición</label>
+                            <select class="form-select" name="condicion" id="condicion">
+                                <option value="">Seleccione una opción</option>
+                                <option value="Nuevo">Nuevo</option>
+                                <option value="Usado">Usado</option>
+                                <option value="Dañado">Dañado</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <label for="colaborador" class="form-label">Asignar a:</label>
+                            <?php if ($listaColaboradores != 'error'): ?>
+                                <select class="form-select" name="colaborador" id="colaborador">
+                                    <option value="">Seleccione una opción</option>
+                                    <option value="0">Sin Asignar</option>
+                                    <option value="9000">Bodega</option>
+                                    <?php foreach ($listaColaboradores as $colaborador): ?>
+                                        <option value="<?= $colaborador['emp_id'] ?>">
+                                            <?= $colaborador['emp_nombre'] ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php else: ?>
+                                <p>No se encontraron colaboradores disponibles.</p>
+                            <?php endif; ?>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label for="cantidad_asigna" class="form-label">Cantidad</label>
+                            <input type="number" class="form-control" id="cantidad_asigna" name="cantidad_asigna">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer py-1 px-2">
+                        <button type="button" class="btn btn-secondary me-2 fs-6" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" name="asignar" class="btn btn-success fs-6">Asignar</button>
+                    </div>
             </form>
 <?php
             break;

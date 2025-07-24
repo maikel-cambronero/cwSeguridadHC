@@ -127,6 +127,18 @@ class usuariosController
         }
     }
 
+    public function get_empleadoID($id)
+    {
+        $model = new usuarioModel();
+        $user = $model->get_empleadoID($id);
+
+        if ($user != 'error') {
+            return $user;
+        } else {
+            return 'error';
+        }
+    }
+
     /**
      * FUNCIONES PARA AGREGAR
      */
